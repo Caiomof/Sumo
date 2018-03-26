@@ -1,3 +1,7 @@
+/************* PROGRAMAÇÃO DESENVOLVIDA PARA A WINTER CHALLENGE 2018***********
+*****************PELA EQUIPE DE ROBÓTICA CARRANCA******************************
+*******************************************************************************/
+
 //Supõe-se que o carro vira 90º em 1s 
 
 #define MOTOR_E1 5
@@ -11,8 +15,10 @@
 
 #define velocidadePadrao 150 //Suposição
 
-
 #define BOTAO 13
+
+#define DELAY 1000
+#define DEBUG 1
 
 //====ARRAY PARA AS PORTAS DOS SENSORES===
 int VISAO_OPONENTE [3] = {};
@@ -167,5 +173,12 @@ void verBotao(int botao)
     parar();
     sinalLed(LED_FIMLUTA);
   }
+}
+
+void imprimirDebug (int velocidadePadrao) {
+  if (DEBUG)
+  Serial.print(" Velocidade Padrao : ");
+  Serial.print(velocidadePadrao);
+  delay(DELAY);
 }
 
