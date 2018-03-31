@@ -20,8 +20,12 @@
 #define DELAY 1000
 #define DEBUG 1
 
+int angulosPossiveis [12] = {30, 45, 60, 90, 180, 360, -30, -45, -60, -90, -180, -360};
+
+
 //====ARRAY PARA AS PORTAS DOS SENSORES===
-int VISAO_OPONENTE [3] = {};
+const byte PIN_SENSOR_OPONENTE [3] = {A0, A1, A2}; //Sensor Sharp
+//--------------------------------------------------------
 
 //======DEFINIÇÃO TEMPO DE COMBATE=================
 unsigned long tempoInicio=0;
@@ -175,10 +179,10 @@ void verBotao(int botao)
   }
 }
 
-void imprimirDebug (int velocidadePadrao) {
+void imprimirDebug (int velocPadao) {
   if (DEBUG)
   Serial.print(" Velocidade Padrao : ");
-  Serial.print(velocidadePadrao);
+  Serial.print(velocPadao);
   delay(DELAY);
 }
 
