@@ -3,29 +3,41 @@
 *******************************************************************************/
 
 //Supõe-se que o carro vira 90º em 1s 
+#include <SharpIR.h>
 
 #define MOTOR_E1 5
 #define MOTOR_E2 6
 #define MOTOR_D1 9
 #define MOTOR_D2 10
 
-#define visaoDir A0
-#define visaoFre A1
-#define visaoEsq A2
+#define BOTAO 13
+
+//====ARRAY PARA AS PORTAS DOS SENSORES===
+const uint8_t PIN_SENSOR_OPONENTE [3] = {A0, A1, A2}; //Sensor Sharp - uint8_t = 'unsigned char'
+
+const uint8_t PIN_SENSOR_BORDA[] = {};//Pode-se colocar nas primeiras posições o 'array' e nas duas últimas os dois pequenos 
+//--------------------------------------------------------
+
+#define QTD_SENS_OPON 3
+#define QTD_SENS_BORDA 6
+#define LIMIAR_VER_OPON 25 //distância que se considera ver o oponente 25cm
 
 #define velocidadePadrao 150 //Suposição
-
-#define BOTAO 13
 
 #define DELAY 1000
 #define DEBUG 1
 
+//Array que armazena a distância que cada sensor detecta ===Esse array pode ser um retorno da função 'lerSensor'
+//int valSensorOponente [3] = {0, 0, 0};
 int angulosPossiveis [12] = {30, 45, 60, 90, 180, 360, -30, -45, -60, -90, -180, -360};
 
 
-//====ARRAY PARA AS PORTAS DOS SENSORES===
-const byte PIN_SENSOR_OPONENTE [3] = {A0, A1, A2}; //Sensor Sharp
-//--------------------------------------------------------
+//Novo tipo para retorno das funções de leitura de sensores
+typedef struct leituraSensores
+{
+    byte sensoresAtivos[QTD_SENS_OPON]; // um array de 1's e 0's OU (um char com 'EC'=Esquedo e central; 'ECD'= Esquerdo, Direito e Central)
+    float distancias[QTD_SENS_OPON];
+} LeituraSensor;
 
 //======DEFINIÇÃO TEMPO DE COMBATE=================
 unsigned long tempoInicio=0;
@@ -42,23 +54,68 @@ void setup()
   delay(3000);
 }
 
+//====FUNÇÃO PROCURAR
+void procurar ()
+{
+  movimentoLinear(velocidadePadrao);
+  delay (2000);//Só para exemplo. este pause seria verificações de sensores em um dado tempo
+  int angRand = random (0,sizeof(angulosPossiveis)/sizeof(angulosPossiveis[0]));
+  movimentoAngular (angRand, false);
+  movimentoLinear(velocidadePadrao);
+/*
+A função movimentoLinear inicia e, depois, a função movimento angular é chamada
+recebendo valores contidos no array 'angulosPossiveis'. Esses valores serão escolhidos
+aleatoriamente por uma função randômica.
+O tempo em qe o robô se manterá em movimento linear também poderá se aleatório e, nas
+funções de movimento linear e angular, podem ser chamadas as funções de verificação dos sensores.
+*/
+
+}
+
+//=======FUNÇÃO PARA 
+ORES DE BORDA======
+LeituraSensor lerSensorBorda(uint8_t pinSensoresBorda[QTD_SENS_BORDA]){}
+
+
+//====FUNÇÃO PARA LER SENSORES DE OPONENTE=====
+/*QUESTÃO
+Esta função deve apenas ler, converter e retornar o valor dos sensores um por um? Ou
+Obter o valor dos sensores, convertê-los e retornar as distâncias em um array? (VERIFICAR A POSSIBILIDADE DO USO DA FUNÇÃO SharpIR)
+*/
+LeituraSensor lerSensorOpon (uint8_t pinSensoresOpon[QTD_SENS_OPON], int tamanhoArray)
+{
+  LeituraSensor leitura;
+  //for (int i = 0; i< sizeof(pinSensoresOpon); i++)
+  for (int i = 0; i< tamanhoArray; i++)
+  {
+    SharpIR visaoOpon (GP2YA41SK0F, pinSensoresOpon[i]);
+    leitura.distancias[i] = visaoOpon.getDistance();
+    (leitura.sensoresAtivos[i] = (leitura.distancias[i] <= LIMIAR_VER_OPON) ? 1 : 0);
+  }
+     return leitura;
+ }
+
+//========Início das funções para o PID=======//
+//========FIM das funções para o PID=======//
+
 //===FUNÇÃO PARA VIRAR O ROBÔ EM GRAUS===//
-void movimentoAngular (int grau, boolean girar){
+/*Uma diferença é que 'positivo' e 'negativo' 
+ * tem como referença o ciclo trigonométrico 
+ * (abscissa: 180 -- 0)
+*/
+void movimentoAngular (int grau, boolean girar)
+{
   int duracao = abs((grau/90)*1000);
   unsigned long init = millis();
-  if (grau<0)
-  {
-    analogWrite (MOTOR_E1, velocidadePadrao);
-    analogWrite (MOTOR_E2, 0);
-    analogWrite (MOTOR_D1, 0);
-    analogWrite (MOTOR_D2, velocidadePadrao);
-    
-    if (girar == false){
+  if (girar==false){
+    if (grau<0)
+    {
+      motorDir(velocidadePadrao*(grau/(grau)));
+      motorEsq(velocidadePadrao*(grau/(-grau)));
       do{  
-        //restrições
-      }while ((millis()-init) <= duracao);  
+        //restrições: chama funções que verificam sensores e, dependendo do retorno destas, chama a(s) função de PID/ataque ou de desvio de borda.
+        }while ((millis()-init) <= duracao);  
       parar();
-    }
     
     /*Neste caso pode ser melhor usar delay(duracao), porque as duas opções
     paralizarão o fluxo do programa.
@@ -67,45 +124,35 @@ void movimentoAngular (int grau, boolean girar){
     mas continuaria fazendo as outras verificações e, em alguns pontos do código,
     seria feita a checagem do tempo limite (de parada) da tal movimentação. 
     */
-    
-  }
-  else
-  { 
-    analogWrite (MOTOR_E1, 0);
-    analogWrite (MOTOR_E2, velocidadePadrao);
-    analogWrite (MOTOR_D1, velocidadePadrao);
-    analogWrite (MOTOR_D2, 0);
-   if (girar == false){
+    }
+    else
+    { 
+      motorDir(velocidadePadrao*(grau/(grau)));
+      motorEsq(velocidadePadrao*(grau/(-grau)));
       do{  
         //restrições
       }while ((millis()-init) <= duracao);  
       parar();
     }
+  //Se ângulo < ou > ZERO e girar = true, ele deve girar indefinidamente em algum dos sentidos
+  }else  
+  {
+    motorDir(velocidadePadrao*(grau/(grau)));
+    motorEsq(velocidadePadrao*(grau/(-grau)));
   }
 }
 
 //===FUNÇÃO PARA MOVIMENTAÇÃO FRENTE-TRÁS===//  
 void movimentoLinear(int potencia){
-  if (potencia >0){
-    analogWrite (MOTOR_E1, velocidadePadrao);
-    analogWrite (MOTOR_E2, 0);
-    analogWrite (MOTOR_D1, velocidadePadrao);
-    analogWrite (MOTOR_D2, 0);
-  }else{
-    analogWrite (MOTOR_E1, 0);
-    analogWrite (MOTOR_E2, velocidadePadrao);
-    analogWrite (MOTOR_D1, 0);
-    analogWrite (MOTOR_D2, velocidadePadrao);
-  }
+  motorDir(potencia);
+  motorEsq(potencia);
 }
 
 
 void parar ()
 {
-      analogWrite (MOTOR_E1, 0);
-      analogWrite (MOTOR_E2, 0);
-      analogWrite (MOTOR_D1, 0);
-      analogWrite (MOTOR_D2, 0);
+  motorDir(0);
+  motorEsq(0);
 }
 
 
@@ -115,14 +162,37 @@ void parar ()
 */  
 void getAnguloTempo()
 {
-      analogWrite (MOTOR_E1, 0);
-      analogWrite (MOTOR_E2, velocidadePadrao);
-      analogWrite (MOTOR_D1, velocidadePadrao);
-      analogWrite (MOTOR_D2, 0);
+      movimentoAngular(1,true);
       delay(500);
       parar();
 }
 
+//Com base no robô seguidor Marquinho
+void motorDir (int potencia)
+{
+  if (potencia > 0){
+    digitalWrite(MOTOR_D2, LOW);
+    analogWrite(MOTOR_D1, abs(potencia));
+    }
+    else
+    {
+      digitalWrite (MOTOR_D1, LOW);
+      analogWrite (MOTOR_D2, abs(potencia));
+    }
+}
+void motorEsq(int potencia)
+{
+  if(potencia > 0)
+  {
+    digitalWrite(MOTOR_E2, LOW);
+    analogWrite(MOTOR_E1, abs(potencia));
+  }
+  else
+  {
+    digitalWrite(MOTOR_E1, LOW);
+    analogWrite(MOTOR_E2, abs(potencia));
+  }
+}
 void loop() 
 {
   boolean botao = digitalRead (BOTAO);
