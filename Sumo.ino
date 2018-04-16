@@ -96,6 +96,23 @@ LeituraSensor lerSensorOpon (uint8_t pinSensoresOpon[QTD_SENS_OPON], int tamanho
  }
 
 //========Início das funções para o PID=======//
+int correcao(bool binSensors[QTD_SENS_OPON],int sensoresAtivos)
+{
+    static float erroAnt=0, somaErro=0;
+    static int tempo=0;
+    float erro;
+    int pid;
+
+    if((erro = Erro(&erroAnt, binSensors, sensoresAtivos))=0)
+        somaErro=0;
+    else
+        somaErro+= erro;
+//DEFINIR VALOR DAS CONSTANTES
+    pid=(int)(KP*erro)+(KI*somaErro)+(KD*erro-erroAnt);
+    tempo = millis();
+    erroAnt = erro;
+    return pid;
+}
 //========FIM das funções para o PID=======//
 
 //===FUNÇÃO PARA VIRAR O ROBÔ EM GRAUS===//
