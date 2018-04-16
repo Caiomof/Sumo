@@ -113,6 +113,10 @@ int correcao(bool binSensors[QTD_SENS_OPON],int sensoresAtivos)
     erroAnt = erro;
     return pid;
 }
+float Erro(float *erroAnt, bool binSensors[QTD_SENS_OPON], int sensoresAtivos) 
+    {
+        return 0;
+    }
 //========FIM das funções para o PID=======//
 
 //===FUNÇÃO PARA VIRAR O ROBÔ EM GRAUS===//
@@ -126,12 +130,12 @@ void movimentoAngular (int grau, boolean girar)
   unsigned long init = millis();
   if (girar==false){
     if (grau<0)
-    {
-      motorDir(velocidadePadrao*(grau/(grau)));
-      motorEsq(velocidadePadrao*(grau/(-grau)));
-      do{  
+        {
+            motorDir(velocidadePadrao*(grau/(grau)));
+            motorEsq(velocidadePadrao*(grau/(-grau)));
+                do{  
         //restrições: chama funções que verificam sensores e, dependendo do retorno destas, chama a(s) função de PID/ataque ou de desvio de borda.
-        }while ((millis()-init) <= duracao);  
+                    }while ((millis()-init) <= duracao);  
       parar();
     
     /*Neste caso pode ser melhor usar delay(duracao), porque as duas opções
@@ -214,7 +218,7 @@ void loop()
 {
   boolean botao = digitalRead (BOTAO);
   //verBotao(botao);
- 
+  bool binSensors[QTD_SENS_OPON]; 
   movimentoLinear (1);
   movimentoAngular(30, true);
   
