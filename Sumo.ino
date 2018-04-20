@@ -5,12 +5,14 @@
 //Supõe-se que o carro vira 90º em 1s 
 #include <SharpIR.h>
 
-#define MOTOR_E1 5
-#define MOTOR_E2 6
-#define MOTOR_D1 9
-#define MOTOR_D2 10
+#define MOTOR_E 5
+#define MOTOR_D 6
 
 #define BOTAO 13
+
+//DEFINE PARA SAIDA DOS MOTORES
+#define SAIDA_MAX 255
+#define SAIDA_MIN -255
 
 //====ARRAY PARA AS PORTAS DOS SENSORES===
 const uint8_t PIN_SENSOR_OPONENTE [3] = {A0, A1, A2}; //Sensor Sharp - uint8_t = 'unsigned char'
@@ -46,10 +48,8 @@ unsigned long tempoInicio=0;
 void setup() 
 {
   pinMode (BOTAO, INPUT);
-  pinMode (MOTOR_E1, OUTPUT);
-  pinMode (MOTOR_E2, OUTPUT);
-  pinMode (MOTOR_D1, OUTPUT);
-  pinMode (MOTOR_D2, OUTPUT);
+  pinMode (MOTOR_E, OUTPUT);
+  pinMode (MOTOR_D, OUTPUT);
 
   delay(3000);
 }
@@ -70,10 +70,9 @@ O tempo em qe o robô se manterá em movimento linear também poderá se aleató
 funções de movimento linear e angular, podem ser chamadas as funções de verificação dos sensores.
 */
 
-}
+i}
 
-//=======FUNÇÃO PARA 
-ORES DE BORDA======
+//=======FUNÇÃO PARA SENSORES DE BORDA======
 LeituraSensor lerSensorBorda(uint8_t pinSensoresBorda[QTD_SENS_BORDA]){}
 
 
