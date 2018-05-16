@@ -39,10 +39,17 @@ void procurar ()
   unsigned long tempo = 0;
   int valMaxRand = (sizeof(velocidades) / sizeof(velocidades[0]));
   int *codReacao = (int *) malloc (2 * sizeof (int));
+  
+  int randPosicao = 0;
+  int velociRandE = 0;
+  int velociRandD = 0;
+  
   do
   {
-    int velociRandE = random (0, valMaxRand); //entre min=0 e max-1
-    int velociRandD = random (0, valMaxRand); //entre min=0 e max-1
+    randPosicao = random (0, valMaxRand);     //entre min=0 e max-1
+    velociRandE = velocidades[randPosicao1];
+    randPosicao = random (0, valMaxRand);    //entre min=0 e max-1
+    velociRandD = velocidades[randPosicao2]; 
 
     tempo = millis();
     //inicia a movimentação com as verificações
