@@ -7,6 +7,7 @@
 
 //======DEFINIÇÃO TEMPO DA LUTA=================
 unsigned long tempoInicial = 0;
+bool fim = false;
 #define TEMPO_FIM 180 //180s - 3 min
 //==============================================
 int codReacao[2];//Array p/ armazenar Código para Reação de Borda
@@ -17,7 +18,7 @@ int codReacao[2];//Array p/ armazenar Código para Reação de Borda
 
 #define QTD_SENS_BORDA_T 2 //QTD de sensores de trás
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
-#define EMITTER_PIN   2     // emitter is controlled by digital pin 2 (serve só para o array e, pelo Proteus ,não está conectado na placa)
+#define EMITTER_PIN   2     // emitter is controlled by digital pin 2 (serve só para o array e, pelo Proteus, não está conectado na placa. A conexão será feita)
 
 
 
@@ -62,51 +63,55 @@ void lerSensorBorda(unsigned int * valSensoresBorda, int tamanhoArray)
     Serial.print('\t'); // tab to format the raw data into columns in the Serial monitor
   }
   Serial.println();
-  delay(1000);
+  //delay(1000);
   //==============================================Vai pra debug
 
 }
 
 
 /*
-  Função que verifica os array's de valores para cada sensor de borda e
-  alimenta o array de retorno.
+  Função que verifica os array's de valores para cada sensor de borda e alimenta o array de retorno.
   'retorno' é um array de 2 posições que será preenchido com um codigo para a função de reação.
-  Os sensores da frente são positivos e os 2 de trás são negativos
+  Os sensores da frente são positivos. Dos 8 sensores do array da frente, a 1ª metade corresponde
+  ao lado esquerdo, enquanto a 2ª metade, ao lado direito.
+  As 2 unidades de sensores de trás são representadas por valor negativo.
 */
 void detectarBorda (unsigned int * sensoresFrente, unsigned int * sensoresTras, int * retorno)
 {
   retorno[0] = 0;
   retorno[1] = 0;
 
-  byte metadeQtdF = QTD_SENS_BORDA_F / 2;
-  for (int i = 0; i <= QTD_SENS_BORDA_F; i++)
+  int metadeQtdF = QTD_SENS_BORDA_F / 2;
+  for (int i = 0; i < QTD_SENS_BORDA_F; i++)//(0..7)==(8) posições
   {
-    if (i <= metadeQtdF) {
+    if (i < metadeQtdF) //(0..3)
+    {
       retorno[0] += sensoresFrente[i];
       Serial.print("FE ");
       Serial.println(retorno[0]);
     }
 
-    else {
+    else //(4..7)
+    {
       retorno[1] += sensoresFrente[i];
       Serial.print("FD ");
       Serial.println(retorno[1]);
     }
   }
 
-  retorno[0] -= (sensoresTras[1]);
-  Serial.print("TD ");
-  Serial.println(retorno[1]);
-  retorno[1] -= (sensoresTras[0]);
+  retorno[1] -= (sensoresTras[0]); //Valor do sensor esq. na posição dir.
   Serial.print("TE ");
   Serial.println(retorno[1]);
+  
+  retorno[0] -= (sensoresTras[1]); //Valor do sensor dir. na posição esq.
+  Serial.print("TD ");
+  Serial.println(retorno[0]);
   //==============================================Vai pra debug
 
   Serial.print("Codigo de reacao: ");
-  Serial.println(retorno[0]);
+  Serial.print(retorno[0]);
+  Serial.print('\t');
   Serial.println(retorno[1]);
-  Serial.println("");
   //==============================================Vai pra debug
 
   return;
@@ -121,7 +126,7 @@ boolean detectaOpon() {
 void reacaoBorda (int * codigoReacao)
 //A prioridade é não sair da arena, logo nesta função não será verificada a detecção de oponente.
 {
-  Serial.println("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
+  Serial.println("Reagindo aa borda");
   unsigned long tempo = 0;
   do {
     if (codigoReacao[0] > 0 && codigoReacao[1] > 0)
@@ -263,13 +268,14 @@ void procurar ()
   int velociRandE = 0;
   int velociRandD = 0;
 
-  randomSeed(analogRead(0));
+  randomSeed(analogRead(0)); //Uma porta analógica desocupada
   randPosicao = random (0, valMaxRand);     //entre min=0 e max-1
   velociRandE = velocidades[randPosicao];
 
   randomSeed(analogRead(0));
   randPosicao = random (0, valMaxRand);    //entre min=0 e max-1
   velociRandD = velocidades[randPosicao];
+  velociRandD *= (((velociRandE < 0)&&(velociRandD < 0)) ? (-1) : 1); //Evita que o robô dê ré durante a busca.
 
   tempoMovimento = millis();
   //inicia a movimentação com as verificações
@@ -345,13 +351,18 @@ void setup()
   }
   digitalWrite(13, LOW);
 
-
 }
 void loop() {
   tempoInicial = millis();
-  do
+  if (!fim)
   {
-    procurar ();
-  } while ((millis() - tempoInicial) <= 10);
-
+    do
+    {
+      procurar ();
+    } while ((millis() - tempoInicial) <= 10);
+    fim = true;
+  }else 
+  {
+  parar();
+  }
 }
