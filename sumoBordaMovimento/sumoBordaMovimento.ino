@@ -5,6 +5,8 @@
 #define MOTOR_D1 11 //IN3 ptH
 #define MOTOR_D2 10 //IN4 ptH
 
+#define NUM_VELOCIDADES 6 //Número de tipos de velocidades (para o mov. aleatório)
+
 //======DEFINIÇÃO TEMPO DA LUTA=================
 unsigned long tempoInicial = 0;
 bool fim = false;
@@ -14,23 +16,21 @@ int codReacao[2];//Array p/ armazenar Código para Reação de Borda
 
 
 
-#define QTD_SENS_BORDA_F 8 //QTD de sensores da frente
+#define QTD_SENS_BORDA_F   6     // number of sensors used     8-2 sensores (por causa da falha)
 
-#define QTD_SENS_BORDA_T 2 //QTD de sensores de trás
-#define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
-#define EMITTER_PIN   2     // emitter is controlled by digital pin 2 (serve só para o array e, pelo Proteus, não está conectado na placa. A conexão será feita)
+#define QTD_SENS_BORDA_T 2  //QTD de sensores de trás
+#define TIMEOUT       2000  // waits for 2500 microseconds for sensor outputs to go low Alterado p/ 2000
+#define EMITTER_PIN   A0     // emitter is controlled by digital pin 2 (serve só para o array e, pelo Proteus, não está conectado na placa. A conexão será feita)
 
 
-
-//int *valorSensorBordaF;
 unsigned int ValoresQtrrc8[QTD_SENS_BORDA_F];
-//int *valorSensorBordaT;
 unsigned int ValoresQtrrc2[QTD_SENS_BORDA_T];
 
-int velocidades [12] = { -255, -230, -200, 200, 230, 255};
+int velocidades [NUM_VELOCIDADES] = {-255, -230, -200, 200, 230, 255};
 //===============================================================================
+QTRSensorsRC qtrrc8((unsigned char[]) {12, 9, 8, 7, 4, 3}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN); //Pino D13 (1º) foi retirado por causa da falha, pino 2 (último) por simetria foi returado
 QTRSensorsRC qtrrc2((unsigned char[]) {A4, A5}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
-QTRSensorsRC qtrrc8((unsigned char[]) {13, 12, 9, 8, 7, 4, 3, 2}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
+
 
 
 /*
@@ -50,7 +50,8 @@ void lerSensorBorda(unsigned int * valSensoresBorda, int tamanhoArray)
   {
     valSensoresBorda[i] = ((valSensoresBorda[i] <= 1000) ? 1 : 0); //<=COR_BORDA definir #define. Vendo nada o retorno é 2500
   }
-
+  
+  /*
   //==============================================Vai pra debug
 
   if (tamanhoArray == 2)
@@ -63,9 +64,9 @@ void lerSensorBorda(unsigned int * valSensoresBorda, int tamanhoArray)
     Serial.print('\t'); // tab to format the raw data into columns in the Serial monitor
   }
   Serial.println();
-  //delay(1000);
+  delay(1000);
   //==============================================Vai pra debug
-
+ */
 }
 
 
@@ -87,25 +88,27 @@ void detectarBorda (unsigned int * sensoresFrente, unsigned int * sensoresTras, 
     if (i < metadeQtdF) //(0..3)
     {
       retorno[0] += sensoresFrente[i];
-      Serial.print("FE ");
-      Serial.println(retorno[0]);
+//      Serial.print("FE ");
+//      Serial.println(retorno[0]);
     }
 
     else //(4..7)
     {
       retorno[1] += sensoresFrente[i];
-      Serial.print("FD ");
-      Serial.println(retorno[1]);
+//      Serial.print("FD ");
+//      Serial.println(retorno[1]);
     }
   }
 
   retorno[1] -= (sensoresTras[0]); //Valor do sensor esq. na posição dir.
-  Serial.print("TE ");
-  Serial.println(retorno[1]);
+//  Serial.print("TE ");
+//  Serial.println(retorno[1]);
   
   retorno[0] -= (sensoresTras[1]); //Valor do sensor dir. na posição esq.
-  Serial.print("TD ");
-  Serial.println(retorno[0]);
+//  Serial.print("TD ");
+//  Serial.println(retorno[0]);
+ 
+  /*
   //==============================================Vai pra debug
 
   Serial.print("Codigo de reacao: ");
@@ -113,7 +116,7 @@ void detectarBorda (unsigned int * sensoresFrente, unsigned int * sensoresTras, 
   Serial.print('\t');
   Serial.println(retorno[1]);
   //==============================================Vai pra debug
-
+*/
   return;
 }
 boolean detectaOpon() {
@@ -126,23 +129,25 @@ boolean detectaOpon() {
 void reacaoBorda (int * codigoReacao)
 //A prioridade é não sair da arena, logo nesta função não será verificada a detecção de oponente.
 {
-  Serial.println("Reagindo aa borda");
+  //Serial.println("Reagindo aa borda");
   unsigned long tempo = 0;
   do {
-    if (codigoReacao[0] > 0 && codigoReacao[1] > 0)
+    if (codigoReacao[0] > 0 && codigoReacao[1] > 0) 
     {
       tempo = millis();
       do
       {
         movimentacao (-255, -255);
 
-        lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
-        lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-      } while (((millis() - tempo) <= 3) || (codigoReacao[0] > 0 && codigoReacao[1] > 0) );
+    //    Serial.println("Indo para trás");
+        
+      } while (((millis() - tempo) <= 15) || (codigoReacao[0] > 0 && codigoReacao[1] > 0) );
       tempo = 0;
-      parar();
+      //parar();
     }
     else if (codigoReacao[0] > 0 && codigoReacao[1] < 0)
     {
@@ -151,13 +156,15 @@ void reacaoBorda (int * codigoReacao)
       {
         movimentacao (255, 200);
 
-        lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
-        lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-      } while (((millis() - tempo) <= 3) || (codigoReacao[0] > 0 && codigoReacao[1] < 0));
+      //  Serial.println("Curva para Direita");
+
+      } while (((millis() - tempo) <= 15) || (codigoReacao[0] > 0 && codigoReacao[1] < 0));
       tempo = 0;
-      parar();
+      //parar();
     }
     else if (codigoReacao[0] < 0 && codigoReacao[1] > 0)
     {
@@ -166,13 +173,15 @@ void reacaoBorda (int * codigoReacao)
       {
         movimentacao (200, 255);
 
-        lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
-        lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-      } while (((millis() - tempo) <= 3) || (codigoReacao[0] < 0 && codigoReacao[1] > 0));
+     //   Serial.println("Curva para Esquerda");
+
+      } while (((millis() - tempo) <= 15) || (codigoReacao[0] < 0 && codigoReacao[1] > 0));
       tempo = 0;
-      parar();
+      //parar();
     }
     else if (codigoReacao[0] < 0 && codigoReacao[1] < 0)
     {
@@ -181,13 +190,15 @@ void reacaoBorda (int * codigoReacao)
       {
         movimentacao (255, 255);
 
-        lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
-        lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-      } while (((millis() - tempo) <= 3) || (codigoReacao[0] < 0 && codigoReacao[1] < 0));
+     //   Serial.println("Para Frente");
+
+      } while (((millis() - tempo) <= 15) || (codigoReacao[0] < 0 && codigoReacao[1] < 0));
       tempo = 0;
-      parar();
+      //parar();
     }
     else if (codigoReacao[0] > 0 && codigoReacao[1] == 0)
       //Aqui o robô gira no próprio eixo e depois faz curva na mesma direção
@@ -198,17 +209,21 @@ void reacaoBorda (int * codigoReacao)
         do
         {
           movimentacao (255, 0);
-
-        } while ((millis() - tempo) <= 2);
+        
+      //    Serial.println("Virando à Direita");
+        
+        } while ((millis() - tempo) <= 10);
         movimentacao (240, 200);
 
-        lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
+        lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
         lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-      } while (((millis() - tempo) <= 3) || (codigoReacao[0] > 0 && codigoReacao[1] == 0));
+      //  Serial.println("Curava à Direita");
+
+      } while (((millis() - tempo) <= 15) || (codigoReacao[0] > 0 && codigoReacao[1] == 0));
       tempo = 0;
-      parar();
+      //parar();
     }
     else if (codigoReacao[0] == 0 && codigoReacao[1] > 0)
     {
@@ -218,16 +233,21 @@ void reacaoBorda (int * codigoReacao)
         do
         {
           movimentacao (0, 255);
-        } while ((millis() - tempo) <= 3);
-        movimentacao (110, 240);
 
-        lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
+      //    Serial.println("Virando à Esquerda");
+          
+        } while ((millis() - tempo) <= 10);
+        movimentacao (200, 240);
+
+        lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
         lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-      } while (((millis() - tempo) <= 1000) || (codigoReacao[0] == 0 && codigoReacao[1] > 0));
+      //  Serial.println("Curava à Esquerda");
+
+      } while (((millis() - tempo) <= 15) || (codigoReacao[0] == 0 && codigoReacao[1] > 0));
       tempo = 0;
-      parar();
+      //parar();
     }
     else if ((codigoReacao[0] == 0 && codigoReacao[1] < 0) || (codigoReacao[0] < 0 && codigoReacao[1] == 0))
     {
@@ -237,18 +257,20 @@ void reacaoBorda (int * codigoReacao)
       {
         movimentacao (255, 255);
 
-      } while ((millis() - tempo) <= 3);
+      //          Serial.println("Indo para Frente");
+
+      } while ((millis() - tempo) <= 15);
 
       tempo = 0;
-      parar();
+      //parar();
 
     }
 
-    lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
+    lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
     lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
     detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-  } while (codigoReacao[0] != 0 && codigoReacao[1] != 0);
+  } while (codigoReacao[0] != 0 || codigoReacao[1] != 0);
 }
 
 /*
@@ -258,7 +280,7 @@ void reacaoBorda (int * codigoReacao)
 */
 void procurar ()
 {
-  Serial.println("Nova procura");
+  //Serial.println("Nova procura");
 
   unsigned long tempoMovimento = 0;
   int valMaxRand = (sizeof(velocidades) / sizeof(velocidades[0]));
@@ -268,6 +290,7 @@ void procurar ()
   int velociRandE = 0;
   int velociRandD = 0;
 
+  /*
   randomSeed(analogRead(0)); //Uma porta analógica desocupada
   randPosicao = random (0, valMaxRand);     //entre min=0 e max-1
   velociRandE = velocidades[randPosicao];
@@ -276,25 +299,28 @@ void procurar ()
   randPosicao = random (0, valMaxRand);    //entre min=0 e max-1
   velociRandD = velocidades[randPosicao];
   velociRandD *= (((velociRandE < 0)&&(velociRandD < 0)) ? (-1) : 1); //Evita que o robô dê ré durante a busca.
-
+  */
+  
   tempoMovimento = millis();
   //inicia a movimentação com as verificações
   do
   {
-    movimentacao (velociRandE, velociRandD);
-    lerSensorBorda(ValoresQtrrc8, 8); //preenche o array de valores
-    lerSensorBorda(ValoresQtrrc2, 2); //preenche o array de valores
+    //movimentacao (velociRandE, velociRandD);
+      movimentacao (240, 240);
+    
+    lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
+    lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
     detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-    if (codReacao[0] != 0 && codReacao[1] != 0)
+    if (codReacao[0] != 0 || codReacao[1] != 0)
     {
       reacaoBorda (codReacao);
     }
     else if (detectaOpon()) {}
 
-  } while ((millis() - tempoMovimento) <= 5);
+  } while ((millis() - tempoMovimento) <= 20);
 
-  Serial.println("Fim da procura");
+  //Serial.println("Fim da procura");
 
 
 }
@@ -354,15 +380,15 @@ void setup()
 }
 void loop() {
   tempoInicial = millis();
-  if (!fim)
-  {
+  //if (!fim)
+  //{
     do
     {
       procurar ();
-    } while ((millis() - tempoInicial) <= 10);
-    fim = true;
-  }else 
-  {
+    } while ((millis() - tempoInicial) <= TEMPO_FIM);
+ //   fim = true;
+ // }else 
+  //{
   parar();
-  }
+ // }
 }
