@@ -1,12 +1,13 @@
-/************* PROGRAMAÇÃO DESENVOLVIDA PARA A WINTER CHALLENGE 2018***********
-*****************PELA EQUIPE DE ROBÓTICA CARRANCA******************************
-*******************************************************************************/
+/************** PROGRAMAÇÃO DESENVOLVIDA PARA A WINTER CHALLENGE 2018***********
+ *****************PELA EQUIPE DE ROBÓTICA CARRANCA******************************
+ *******************************************************************************/
 
 //Supõe-se que o carro vira 90º em 1s 
 #include <SharpIR.h>
 
 #define MOTOR_E 5
 #define MOTOR_D 6
+#define VBASE 100
 
 #define BOTAO 13
 
@@ -29,9 +30,13 @@ const uint8_t PIN_SENSOR_BORDA[] = {};//Pode-se colocar nas primeiras posições
 #define DELAY 1000
 #define DEBUG 1
 
+#define KP 70
+#define KI 0.000001
 //Array que armazena a distância que cada sensor detecta ===Esse array pode ser um retorno da função 'lerSensor'
 //int valSensorOponente [3] = {0, 0, 0};
 int angulosPossiveis [12] = {30, 45, 60, 90, 180, 360, -30, -45, -60, -90, -180, -360};
+float sensoresAt
+int ret = 0;
 
 
 //Novo tipo para retorno das funções de leitura de sensores
@@ -41,36 +46,46 @@ typedef struct leituraSensores
     float distancias[QTD_SENS_OPON];
 } LeituraSensor;
 
+for(i = 0; i < 3; i++)
+{
+    LeituraSensores sensor[i];
+    sensor.distancias[i] = distancia(sensores[i]);
+    if((sensor.distancias[i] < 30) == true)
+        sensor.distancias[i] = pow(2,i);
+    else
+        sensor.distancias[i] = 0;
+}
+
 //======DEFINIÇÃO TEMPO DE COMBATE=================
 unsigned long tempoInicio=0;
 #define TEMPO_FIM 180000 //3 Minutos
 
 void setup() 
 {
-  pinMode (BOTAO, INPUT);
-  pinMode (MOTOR_E, OUTPUT);
-  pinMode (MOTOR_D, OUTPUT);
+    pinMode (BOTAO, INPUT);
+    pinMode (MOTOR_E, OUTPUT);
+    pinMode (MOTOR_D, OUTPUT);
 
-  delay(3000);
+    delay(3000);
 }
 
 //====FUNÇÃO PROCURAR
 void procurar ()
 {
-  movimentoLinear(velocidadePadrao);
-  delay (2000);//Só para exemplo. este pause seria verificações de sensores em um dado tempo
-  int angRand = random (0,sizeof(angulosPossiveis)/sizeof(angulosPossiveis[0]));
-  movimentoAngular (angRand, false);
-  movimentoLinear(velocidadePadrao);
-/*
-A função movimentoLinear inicia e, depois, a função movimento angular é chamada
-recebendo valores contidos no array 'angulosPossiveis'. Esses valores serão escolhidos
-aleatoriamente por uma função randômica.
-O tempo em qe o robô se manterá em movimento linear também poderá se aleatório e, nas
-funções de movimento linear e angular, podem ser chamadas as funções de verificação dos sensores.
-*/
+    movimentoLinear(velocidadePadrao);
+    delay (2000);//Só para exemplo. este pause seria verificações de sensores em um dado tempo
+    int angRand = random (0,sizeof(angulosPossiveis)/sizeof(angulosPossiveis[0]));
+    movimentoAngular (angRand, false);
+    movimentoLinear(velocidadePadrao);
+    /*
+       A função movimentoLinear inicia e, depois, a função movimento angular é chamada
+       recebendo valores contidos no array 'angulosPossiveis'. Esses valores serão escolhidos
+       aleatoriamente por uma função randômica.
+       O tempo em qe o robô se manterá em movimento linear também poderá se aleatório e, nas
+       funções de movimento linear e angular, podem ser chamadas as funções de verificação dos sensores.
+     */
 
-i}
+}
 
 //=======FUNÇÃO PARA SENSORES DE BORDA======
 LeituraSensor lerSensorBorda(uint8_t pinSensoresBorda[QTD_SENS_BORDA]){}
@@ -78,166 +93,203 @@ LeituraSensor lerSensorBorda(uint8_t pinSensoresBorda[QTD_SENS_BORDA]){}
 
 //====FUNÇÃO PARA LER SENSORES DE OPONENTE=====
 /*QUESTÃO
-Esta função deve apenas ler, converter e retornar o valor dos sensores um por um? Ou
-Obter o valor dos sensores, convertê-los e retornar as distâncias em um array? (VERIFICAR A POSSIBILIDADE DO USO DA FUNÇÃO SharpIR)
-*/
+  Esta função deve apenas ler, converter e retornar o valor dos sensores um por um? Ou
+  Obter o valor dos sensores, convertê-los e retornar as distâncias em um array? (VERIFICAR A POSSIBILIDADE DO USO DA FUNÇÃO SharpIR)
+ */
 LeituraSensor lerSensorOpon (uint8_t pinSensoresOpon[QTD_SENS_OPON], int tamanhoArray)
 {
-  LeituraSensor leitura;
-  //for (int i = 0; i< sizeof(pinSensoresOpon); i++)
-  for (int i = 0; i< tamanhoArray; i++)
-  {
-    SharpIR visaoOpon (GP2YA41SK0F, pinSensoresOpon[i]);
-    leitura.distancias[i] = visaoOpon.getDistance();
-    (leitura.sensoresAtivos[i] = (leitura.distancias[i] <= LIMIAR_VER_OPON) ? 1 : 0);
-  }
-     return leitura;
- }
+    LeituraSensor leitura;
+    //for (int i = 0; i< sizeof(pinSensoresOpon); i++)
+    for (int i = 0; i< tamanhoArray; i++)
+    {
+        SharpIR visaoOpon (GP2YA41SK0F, pinSensoresOpon[i]);
+        leitura.distancias[i] = visaoOpon.getDistance();
+        (leitura.sensoresAtivos[i] = (leitura.distancias[i] <= LIMIAR_VER_OPON) ? 1 : 0);
+    }
+    return leitura;
+}
 
 //========Início das funções para o PID=======//
-int correcao(bool binSensors[QTD_SENS_OPON],int sensoresAtivos)
+int erro(float distancia[])
 {
-    static float erroAnt=0, somaErro=0;
+    erro[5] = {-45, 0, -22.5, 45, 22.5, 0};
+    
+    for(i = 0; i < 3; i++)
+        ret += sensores.distancia[i];
+    
+    switch(ret)
+    {
+        case 1:
+            return erro[0];
+        case 2:
+            return erro[1];
+        case 3:
+            return erro[2];
+        case 4:
+            return erro[3];
+        case 6:
+            return erro[4];
+        case 7:
+            return erro[5];
+    }
+}
+
+//int correcao(bool binSensors[QTD_SENS_OPEN], int sensoresAtivos)
+int correcao(void)
+{
+    /////////////////////////////////////////
+
+    static float somaErro=0;
     static int tempo=0;
     float erro;
-    int pid;
+    int pi;
 
-    if((erro = Erro(&erroAnt, binSensors, sensoresAtivos))=0)
+    if((erro = Erro(binSensors, sensoresAtivos))=0)
         somaErro=0;
     else
         somaErro+= erro;
-//DEFINIR VALOR DAS CONSTANTES
-    pid=(int)(KP*erro)+(KI*somaErro)+(KD*erro-erroAnt);
+    //DEFINIR VALOR DAS CONSTANTES
+    pid=(int)(KP*erro)+(KI*somaErro);
     tempo = millis();
     erroAnt = erro;
-    return pid;
+    return pi;
 }
-float Erro(float *erroAnt, bool binSensors[QTD_SENS_OPON], int sensoresAtivos) 
-    {
-        return 0;
-    }
+
+float Erro(bool binSensors[QTD_SENS_OPON], int sensoresAtivos) 
+{
+    return 0; 
+    // int ret = 4*binSensors[2]+ 2*binSensors[1] + 1*binSensors[0];
+}
+
 //========FIM das funções para o PID=======//
 
 //===FUNÇÃO PARA VIRAR O ROBÔ EM GRAUS===//
 /*Uma diferença é que 'positivo' e 'negativo' 
  * tem como referença o ciclo trigonométrico 
  * (abscissa: 180 -- 0)
-*/
+ */
 void movimentoAngular (int grau, boolean girar)
 {
-  int duracao = abs((grau/90)*1000);
-  unsigned long init = millis();
-  if (girar==false){
-    if (grau<0)
+    int duracao = abs((grau/90)*1000);
+    unsigned long init = millis();
+    if (girar==false)
+    {
+        if (grau<0)
         {
             motorDir(velocidadePadrao*(grau/(grau)));
             motorEsq(velocidadePadrao*(grau/(-grau)));
-                do{  
-        //restrições: chama funções que verificam sensores e, dependendo do retorno destas, chama a(s) função de PID/ataque ou de desvio de borda.
-                    }while ((millis()-init) <= duracao);  
-      parar();
-    
-    /*Neste caso pode ser melhor usar delay(duracao), porque as duas opções
-    paralizarão o fluxo do programa.
-    Uma opção diferente seria definir uma variável global para ser verificada
-    em relação ao tempo de duração. Assim, o código iniciaria a ação dos motores,
-    mas continuaria fazendo as outras verificações e, em alguns pontos do código,
-    seria feita a checagem do tempo limite (de parada) da tal movimentação. 
-    */
+            do{  
+                //restrições: chama funções que verificam sensores e, dependendo do retorno destas, chama a(s) função de PID/ataque ou de desvio de borda.
+            }while ((millis()-init) <= duracao);  
+            parar();
+
+            /*Neste caso pode ser melhor usar delay(duracao), porque as duas opções
+              paralizarão o fluxo do programa.
+              Uma opção diferente seria definir uma variável global para ser verificada
+              em relação ao tempo de duração. Assim, o código iniciaria a ação dos motores,
+              mas continuaria fazendo as outras verificações e, em alguns pontos do código,
+              seria feita a checagem do tempo limite (de parada) da tal movimentação. 
+             */
+        }
+        else
+        { 
+            motorDir(velocidadePadrao*(grau/(grau)));
+            motorEsq(velocidadePadrao*(grau/(-grau)));
+            do{  
+                //restrições
+            }while ((millis()-init) <= duracao);  
+            parar();
+        }
+        //Se ângulo < ou > ZERO e girar = true, ele deve girar indefinidamente em algum dos sentidos
     }
-    else
-    { 
-      motorDir(velocidadePadrao*(grau/(grau)));
-      motorEsq(velocidadePadrao*(grau/(-grau)));
-      do{  
-        //restrições
-      }while ((millis()-init) <= duracao);  
-      parar();
+    else  
+    {
+        motorDir(velocidadePadrao*(grau/(grau)));
+        motorEsq(velocidadePadrao*(grau/(-grau)));
     }
-  //Se ângulo < ou > ZERO e girar = true, ele deve girar indefinidamente em algum dos sentidos
-  }else  
-  {
-    motorDir(velocidadePadrao*(grau/(grau)));
-    motorEsq(velocidadePadrao*(grau/(-grau)));
-  }
 }
 
 //===FUNÇÃO PARA MOVIMENTAÇÃO FRENTE-TRÁS===//  
-void movimentoLinear(int potencia){
-  motorDir(potencia);
-  motorEsq(potencia);
+void movimentoLinear(int potencia)
+{
+    motorDir(potencia);
+    motorEsq(potencia);
 }
 
 
 void parar ()
 {
-  motorDir(0);
-  motorEsq(0);
+    motorDir(0);
+    motorEsq(0);
 }
 
 
 /*Função que fará uma movimentação angular durante 1/2 segundo, 
   para que seja registrado manualmente o ângulo percorrido nesse
   tempo com uma velocidade padrão
-*/  
+ */  
 void getAnguloTempo()
 {
-      movimentoAngular(1,true);
-      delay(500);
-      parar();
+    movimentoAngular(1,true);
+    delay(500);
+    parar();
 }
 
 //Com base no robô seguidor Marquinho
 void motorDir (int potencia)
 {
-  if (potencia > 0){
-    digitalWrite(MOTOR_D2, LOW);
-    analogWrite(MOTOR_D1, abs(potencia));
+    if (potencia > 0){
+        digitalWrite(MOTOR_D2, LOW);
+        analogWrite(MOTOR_D1, abs(potencia));
     }
     else
     {
-      digitalWrite (MOTOR_D1, LOW);
-      analogWrite (MOTOR_D2, abs(potencia));
+        digitalWrite (MOTOR_D1, LOW);
+        analogWrite (MOTOR_D2, abs(potencia));
     }
 }
 void motorEsq(int potencia)
 {
-  if(potencia > 0)
-  {
-    digitalWrite(MOTOR_E2, LOW);
-    analogWrite(MOTOR_E1, abs(potencia));
-  }
-  else
-  {
-    digitalWrite(MOTOR_E1, LOW);
-    analogWrite(MOTOR_E2, abs(potencia));
-  }
+    if(potencia > 0)
+    {
+        digitalWrite(MOTOR_E2, LOW);
+        analogWrite(MOTOR_E1, abs(potencia));
+    }
+    else
+    {
+        digitalWrite(MOTOR_E1, LOW);
+        analogWrite(MOTOR_E2, abs(potencia));
+    }
 }
+
+void controle(int pid)
+{
+    int powEsq, powDir, Vbase;
+    
+    motorDir(VBASE + pid);
+    motorEsq(VBASE - pid);
+}
+
 void loop() 
 {
-  boolean botao = digitalRead (BOTAO);
-  //verBotao(botao);
-  bool binSensors[QTD_SENS_OPON]; 
-  movimentoLinear (1);
-  movimentoAngular(30, true);
-  
-  
+    boolean botao = digitalRead (BOTAO);
+    //verBotao(botao);
+    bool binSensors[QTD_SENS_OPON]; 
+    movimentoLinear (1);
+    movimentoAngular(30, true);
+    
+    int i = correcao();
+    controle(i);
 }
-
-
 
 void olhos (){}
 void sinalLed(int tipo){}
 void estrategia(){}
 void borda(){}
 
-
-
-
-
 /*A seguir, código para uso de botão de partida
-e sinais de LED.
-*/
+  e sinais de LED.
+ */
 
 //======DEFINIÇÃO SINAIS DE LED=================
 #define LED_PRELUTA 1 //sugestão: definir sinal de ações indicadas por led
@@ -246,33 +298,33 @@ e sinais de LED.
 
 void verBotao(int botao)
 {
-  if (botao == false)
-  {
-    sinalLed(LED_PRELUTA);
-  }
-  else if (botao == true && tempoInicio==0)
-  {
-    tempoInicio=millis();
-    estrategia();
-  }
-  else if (botao == true && (millis() - tempoInicio)>=1000){
-    //para e pisca led. Isto caso seja necessário interromper a luta antes do fim
-    parar();
-    sinalLed(LED_INTERRUPCAO);
-    tempoInicio==0;
-  }
-  else if ((millis()-tempoInicio)>=TEMPO_FIM)
-  {
-    //fim da luta
-    parar();
-    sinalLed(LED_FIMLUTA);
-  }
+    if (botao == false)
+    {
+        sinalLed(LED_PRELUTA);
+    }
+    else if (botao == true && tempoInicio==0)
+    {
+        tempoInicio=millis();
+        estrategia();
+    }
+    else if (botao == true && (millis() - tempoInicio)>=1000){
+        //para e pisca led. Isto caso seja necessário interromper a luta antes do fim
+        parar();
+        sinalLed(LED_INTERRUPCAO);
+        tempoInicio==0;
+    }
+    else if ((millis()-tempoInicio)>=TEMPO_FIM)
+    {
+        //fim da luta
+        parar();
+        sinalLed(LED_FIMLUTA);
+    }
 }
 
 void imprimirDebug (int velocPadao) {
-  if (DEBUG)
-  Serial.print(" Velocidade Padrao : ");
-  Serial.print(velocPadao);
-  delay(DELAY);
+    if (DEBUG)
+        Serial.print(" Velocidade Padrao : ");
+    Serial.print(velocPadao);
+    delay(DELAY);
 }
 
