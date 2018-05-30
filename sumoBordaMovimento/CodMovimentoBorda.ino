@@ -317,6 +317,7 @@ void procurar ()
  // Serial.println("Nova procura\n");
 
   unsigned long tempoMovimento = 0;
+/*
   int valMaxRand = (sizeof(velocidades) / sizeof(velocidades[0]));
 
 
@@ -334,12 +335,13 @@ void procurar ()
   randPosicao = random (0, valMaxRand);
   velociRandD = velocidades[randPosicao];
   velociRandD *= (((velociRandE < 0) && (velociRandD < 0)) ? (-1) : 1); //Evita que o robô dê ré durante a busca.
-
+ */
   tempoMovimento = millis();
   //inicia a movimentação com as verificações
-  do
-  {
-    movimentacao (velociRandE, velociRandD);
+  //do
+  //{  
+    movimentacao (200, 200);
+    //movimentacao (velociRandE, velociRandD);
     lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
     lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
     detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
@@ -357,7 +359,7 @@ void procurar ()
         Serial.println(velociRandD);
         //===============================Debug
     */
-  } while ((millis() - tempoMovimento) <= 3000);
+  //} while ((millis() - tempoMovimento) <= 3000);
 
   //Serial.println("Fim da procura\n");
 }
