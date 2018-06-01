@@ -13,13 +13,12 @@
 #define KP 70
 #define KI 0.000001
 
-SharpIR sensor0(GP2YA41SK0F, A3);
-SharpIR sensor1(GP2YA41SK0F, A2);
+SharpIR sensor0(GP2YA41SK0F, A2);
+SharpIR sensor1(GP2YA41SK0F, A3);
 SharpIR sensor2(GP2YA41SK0F, A1);
 
 //Novo tipo para retorno das funções de leitura de sensores
 int distance[QTD_SENS_OPON] = {0};
-int ret = 0;
 
 void setup()
 {
@@ -34,44 +33,79 @@ void prenchimento()
 
     for(int i = 0; i < 3; i++)
     {
-        if(distance[i] < 10)
-            distance[i] = pow(2,i);
+        if(distance[i] < 12)
+        {
+            Serial.print("Distancia "); Serial.print(i); Serial.print(" : ");
+            Serial.println(distance[i]); //Print the value to the serial monitor
+            //distance[i] = pow(2,i);
+        }
         else
             distance[i] = 0;
     }
+    Serial.println();
 }
 
 //========Início das funções para o PID=======//
 int erro_pi(int distance[])
 {
-
+    int ret = 0;
     int erro[6] = {-45, 0, -23, 45, 23, 0};
+    delay(500);
 
     for(int i = 0; i < 3; i++)
+    {
         ret += distance[i];
-
+    }
     switch(ret)
     {
+        case 0:
+            /*
+               Serial.println("Opa"); //Print the value to the serial monitor
+               Serial.println(ret); //Print the value to the serial monitor
+               Serial.println(); //Print the value to the serial monitor
+             */
         case 1:
-            Serial.println(erro[0]); //Print the value to the serial monitor
+            /*
+               Serial.println(erro[0]); //Print the value to the serial monitor
+               Serial.println(ret); //Print the value to the serial monitor
+               Serial.println(); //Print the value to the serial monitor
+             */
             return erro[0];
         case 2:
-            Serial.println(erro[1]); //Print the value to the serial monitor
+            /*
+               Serial.println(erro[1]); //Print the value to the serial monitor
+               Serial.println(ret); //Print the value to the serial monitor
+               Serial.println(); //Print the value to the serial monitor
+             */
             return erro[1];
         case 3:
-            Serial.println(erro[2]); //Print the value to the serial monitor
+            /*
+               Serial.println(erro[2]); //Print the value to the serial monitor
+               Serial.println(ret); //Print the value to the serial monitor
+               Serial.println(); //Print the value to the serial monitor
+             */
             return erro[2];
         case 4:
-            Serial.println(erro[3]); //Print the value to the serial monitor
+            /*
+               Serial.println(erro[3]); //Print the value to the serial monitor
+               Serial.println(ret); //Print the value to the serial monitor
+               Serial.println(); //Print the value to the serial monitor
+             */
             return erro[3];
-        case 6:
-            Serial.println(erro[4]); //Print the value to the serial monitor
+        case 5:
+            /*
+               Serial.println(erro[4]); //Print the value to the serial monitor
+               Serial.println(ret); //Print the value to the serial monitor
+               Serial.println(); //Print the value to the serial monitor
+             */
             return erro[4];
         case 7:
-            Serial.println(erro[5]); //Print the value to the serial monitor
+            /*
+               Serial.println(erro[5]); //Print the value to the serial monitor
+               Serial.println(ret); //Print the value to the serial monitor
+               Serial.println(); //Print the value to the serial monitor
+             */
             return erro[5];
-            //default:
-            //Serial.println("Opa"); //Print the value to the serial monitor
     }
 }
 
@@ -136,4 +170,3 @@ void loop()
     pi = correcao(distance);
     controle(pi);
 }
-
