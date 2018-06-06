@@ -8,10 +8,26 @@
 #define NUM_VELOCIDADES 6 //Número de tipos de velocidades (para o mov. aleatório)
 
 
-#define DELAY 500
+//#define DELAY 500
+#define DELAY 0
 #define DEBUG_OPON 0
 #define DEBUG_BORDA 0
 #define DEBUG_MOTOR 0
+
+
+//Velocidades
+#define VEL_MAX_PADRAO 110
+#define VEL_MIN_PADRAO
+#define VEL_ESQ_CURVA_DIR 90
+#define VEL_DIR_CURVA_DIR 55
+#define VEL_ESQ_CURVA_ESQ 55
+#define VEL_DIR_CURVA_ESQ 90
+#define VEL_GIRO 100
+
+//Tempos de movimentação
+#define TEMPO_CURVA 900
+#define TEMPO_MOV_LINEAR 1000 //PROVISÓRIO
+
 
 //======DEFINIÇÃO TEMPO DA LUTA=================
 unsigned long tempoInicial = 0;
@@ -34,11 +50,15 @@ int velocidades [NUM_VELOCIDADES] = { -255, -230, -200, 200, 230, 255};
 /*
   Pino D13 foi transportado para o 4º sensor e receberá valor sempre 0, pois está enviando valores sempre baixos (1).
   Os valores baixos são motivados pela má interação dos sensores com a presença do LED SMD do Arduino, em pino compartilhado.
-  [RESOLVIDO: Continuidade]O penúltimo sensor (na porta 3) está enviando valor sempre alto (0), mas isso poderá ser ignorado, 
+  [RESOLVIDO: Continuidade]O penúltimo sensor (na porta 3) está enviando valor sempre alto (0), mas isso poderá ser ignorado,
   pois ele não está na extremidade e está sempre como 0.
 */
-QTRSensorsRC qtrrc8((unsigned char[]) {8, 12, 9, 13, 7, 4, 3, 2}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
-QTRSensorsRC qtrrc2((unsigned char[]) {A4, A5}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc8((unsigned char[]) {
+  8, 12, 9, 13, 7, 4, 3, 2
+}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc2((unsigned char[]) {
+  A4, A5
+}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
 
 
 /*
@@ -56,7 +76,7 @@ void lerSensorBorda(unsigned int * valSensoresBorda, int tamanhoArray)
 
   for (int i = 0; i < tamanhoArray; i++)
   {
-    valSensoresBorda[i] = ((valSensoresBorda[i] <= 1000) ? 1 : 0); //<=COR_BORDA definir #define. Vendo nada o retorno é 2500
+    valSensoresBorda[i] = ((valSensoresBorda[i] <= 100) ? 1 : 0); //<=COR_BORDA definir #define. Vendo nada o retorno é 2500
   }
   //Contornando "falhas" da conexão pino D13
   valSensoresBorda[3] = 0;
@@ -85,17 +105,24 @@ void detectarBorda (unsigned int * sensoresFrente, unsigned int * sensoresTras, 
     if (i < metadeQtdF) //(0..3)
     {
       retorno[0] += sensoresFrente[i];
-        }
+      //   Serial.print("FE ");
+      // Serial.println(retorno[0]);
+    }
 
     else //(4..7)
     {
       retorno[1] += sensoresFrente[i];
+      //   Serial.print("FD ");
+      //   Serial.println(retorno[1]);
     }
   }
-
   retorno[1] -= (sensoresTras[0]); //Valor do sensor esq. na posição dir.
+  // Serial.print("TE ");
+  // Serial.println(retorno[1]);
 
   retorno[0] -= (sensoresTras[1]); //Valor do sensor dir. na posição esq.
+  //  Serial.print("TD ");
+  //  Serial.println(retorno[0]);
 
   return;
 }
@@ -125,10 +152,12 @@ void reacaoBorda (int * codigoReacao)
 
       do
       {
-        movimentacao (-255, -255);
+       
+        //movimentacao (-255, -255);
+        movimentacao (-VEL_MAX_PADRAO, -VEL_MAX_PADRAO);
 
         //================================================================================
-        imprimirDebugMotor(-255, -255, "Indo para trás");
+        imprimirDebugMotor(-VEL_MAX_PADRAO, -VEL_MAX_PADRAO, "Indo para trás");
         //================================================================================
 
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -136,7 +165,7 @@ void reacaoBorda (int * codigoReacao)
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
         //&& ao invés de ||: porque caso a detecção mude antes do fim de uma reação, ele já se corrige
-      } while (((millis() - tempo) <= 2000) && (codigoReacao[0] > 0 && codigoReacao[1] > 0) );
+      } while (((millis() - tempo) <= TEMPO_MOV_LINEAR) && (codigoReacao[0] > 0 && codigoReacao[1] > 0) );
       tempo = 0;
       //parar();
     }
@@ -145,7 +174,8 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        movimentacao (255, 200);
+        //movimentacao (255, 200);
+        movimentacao (VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR);
 
         //================================================================================
         imprimirDebugMotor(255, 200, "Curva para Direita");
@@ -156,7 +186,8 @@ void reacaoBorda (int * codigoReacao)
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
 
-      } while (((millis() - tempo) <= 2000) && (codigoReacao[0] > 0 && codigoReacao[1] < 0));
+      } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] > 0 && codigoReacao[1] < 0));
+ 
       tempo = 0;
       //parar();
     }
@@ -165,10 +196,12 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        movimentacao (200, 255);
+        //movimentacao (200, 255);
+        movimentacao (VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ);
+       
 
         //================================================================================
-        imprimirDebugMotor(200, 255, "Curva para Esquerda");
+        imprimirDebugMotor(VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ, "Curva para Esquerda");
         //================================================================================
 
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -176,7 +209,7 @@ void reacaoBorda (int * codigoReacao)
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
 
-      } while (((millis() - tempo) <= 2000) && (codigoReacao[0] < 0 && codigoReacao[1] > 0));
+      } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] < 0 && codigoReacao[1] > 0));
       tempo = 0;
       //parar();
     }
@@ -185,10 +218,12 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        movimentacao (255, 255);
+      //  movimentacao (255, 255);
+        movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO);
+
 
         //================================================================================
-        imprimirDebugMotor(255, 255, "Para Frente");
+        imprimirDebugMotor(VEL_MAX_PADRAO, VEL_MAX_PADRAO, "Para Frente");
         //================================================================================
 
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -209,23 +244,26 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-          movimentacao (255, 0);
+          //movimentacao (255, -255);
+          movimentacao (VEL_GIRO, -VEL_GIRO);
 
           //================================================================================
-          imprimirDebugMotor(255, 0, "Virando à Direita");
+          imprimirDebugMotor(VEL_GIRO, -VEL_GIRO, "Virando à Direita");
           //================================================================================
 
-        } while ((millis() - tempo) <= 2000); //Consome o tempo
+        } while ((millis() - tempo) <= TEMPO_CURVA); //Consome o tempo
 
         tempo = millis(); // Realimenta o tempo
 
         do
         {
 
-          movimentacao (240, 200);
+          //movimentacao (240, 200);
+          movimentacao (VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR);
+
 
           //================================================================================
-          imprimirDebugMotor(240, 200, "Curva à Direita");
+          imprimirDebugMotor(VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR, "Curva à Direita");
           //================================================================================
 
           lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -233,7 +271,7 @@ void reacaoBorda (int * codigoReacao)
           detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
           //&& ao invés de ||: porque caso a detecção mude antes do fim de uma reação, ele já se corrige
-        } while (((millis() - tempo) <= 2000) && (codigoReacao[0] > 0 && codigoReacao[1] == 0)); // Consome o tempo
+        } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] > 0 && codigoReacao[1] == 0)); // Consome o tempo
 
 
       } while (codigoReacao[0] > 0 && codigoReacao[1] == 0);
@@ -251,23 +289,27 @@ void reacaoBorda (int * codigoReacao)
         tempo = millis();
         do
         {
-          movimentacao (0, 255);
+          //movimentacao (0, 255);
+          movimentacao (-VEL_GIRO, VEL_GIRO);
+
 
           //================================================================================
-          imprimirDebugMotor(0, 255, "Virando à Esquerda");
+          imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Virando à Esquerda");
           //================================================================================
 
-        } while ((millis() - tempo) <= 2000);
+        } while ((millis() - tempo) <= TEMPO_CURVA);
 
         tempo = millis();
 
         do
         {
 
-          movimentacao (200, 240);
+          //movimentacao (200, 240);
+          movimentacao (VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ);
+
 
           //================================================================================
-          imprimirDebugMotor(200, 240, "Curva à Esquerda");
+          imprimirDebugMotor(VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ, "Curva à Esquerda");
           //================================================================================
 
           lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -275,7 +317,7 @@ void reacaoBorda (int * codigoReacao)
           detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
 
-        } while (((millis() - tempo) <= 2000) && codigoReacao[0] == 0 && codigoReacao[1] > 0);
+        } while (((millis() - tempo) <= TEMPO_CURVA) && codigoReacao[0] == 0 && codigoReacao[1] > 0);
 
       } while (codigoReacao[0] == 0 && codigoReacao[1] > 0);
 
@@ -288,13 +330,15 @@ void reacaoBorda (int * codigoReacao)
 
       do
       {
-        movimentacao (255, 255);
+        //movimentacao (255, 255);
+        movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO);
+
 
         //================================================================================
-        imprimirDebugMotor(255, 255, "Indo para Frente");
+        imprimirDebugMotor(VEL_MAX_PADRAO, VEL_MAX_PADRAO, "Indo para Frente");
         //================================================================================
-      } while ((millis() - tempo) <= 2000);
-
+      } while ((millis() - tempo) <= TEMPO_MOV_LINEAR);
+      
       tempo = 0;
       //parar();
 
@@ -314,54 +358,55 @@ void reacaoBorda (int * codigoReacao)
 */
 void procurar ()
 {
- // Serial.println("Nova procura\n");
+  Serial.println("Nova procura\n");
+  /*
+    unsigned long tempoMovimento = 0;
+    int valMaxRand = (sizeof(velocidades) / sizeof(velocidades[0]));
 
-  unsigned long tempoMovimento = 0;
-/*
-  int valMaxRand = (sizeof(velocidades) / sizeof(velocidades[0]));
 
+    int randPosicao = 0;
+    int velociRandE = 0;
+    int velociRandD = 0;
 
-  int randPosicao = 0;
-  int velociRandE = 0;
-  int velociRandD = 0;
+    //Definindo velocidade para o motor da esquerda
+    randomSeed(analogRead(A6)); //Uma porta analógica desocupada
+    randPosicao = random (0, valMaxRand);     //entre min=0 e max-1
+    velociRandE = velocidades[randPosicao];
 
-  //Definindo velocidade para o motor da esquerda
-  randomSeed(analogRead(A6)); //Uma porta analógica desocupada
-  randPosicao = random (0, valMaxRand);     //entre min=0 e max-1
-  velociRandE = velocidades[randPosicao];
+    //Definindo velocidade para o motor da direita
+    randomSeed(analogRead(A6));
+    randPosicao = random (0, valMaxRand);
+    velociRandD = velocidades[randPosicao];
+    velociRandD *= (((velociRandE < 0) && (velociRandD < 0)) ? (-1) : 1); //Evita que o robô dê ré durante a busca.
 
-  //Definindo velocidade para o motor da direita
-  randomSeed(analogRead(A6));
-  randPosicao = random (0, valMaxRand);
-  velociRandD = velocidades[randPosicao];
-  velociRandD *= (((velociRandE < 0) && (velociRandD < 0)) ? (-1) : 1); //Evita que o robô dê ré durante a busca.
- */
-  tempoMovimento = millis();
+    tempoMovimento = millis();
+  */
   //inicia a movimentação com as verificações
   //do
-  //{  
-    movimentacao (200, 200);
-    //movimentacao (velociRandE, velociRandD);
-    lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
-    lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
-    detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
+  //{
+  //    movimentacao (velociRandE, velociRandD);
+  movimentacao (200, 200);
+  lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
+  lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
+  detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
 
-    if (codReacao[0] != 0 || codReacao[1] != 0)
-    {
-      reacaoBorda (codReacao);
-    }
-    else if (detectaOpon()) {}
-    /*
-        //===============================Debug
-        Serial.print("Aleatorio com: ");
-        Serial.print(velociRandE);
-        Serial.print('\t');
-        Serial.println(velociRandD);
-        //===============================Debug
-    */
-  //} while ((millis() - tempoMovimento) <= 3000);
+  if (codReacao[0] != 0 || codReacao[1] != 0)
+  {
+    reacaoBorda (codReacao);
+  }
+  else if (detectaOpon()) {}
+  /*
+      //===============================Debug
+      Serial.print("Aleatorio com: ");
+      Serial.print(velociRandE);
+      Serial.print('\t');
+      Serial.println(velociRandD);
+      //===============================Debug
+  */
+  // } while ((millis() - tempoMovimento) <= 3000);
 
-  //Serial.println("Fim da procura\n");
+  Serial.println("Fim da procura\n");
+
 }
 
 void movimentacao(int potenciaE, int potenciaD) {
@@ -373,7 +418,7 @@ void parar ()
 {
   motorDir(0);
   motorEsq(0);
- //Serial.println("parou");
+  //Serial.println("parou");
 }
 
 //Com base no robô seguidor Marquinho
@@ -467,7 +512,7 @@ void setup()
 }
 void loop() {
   tempoInicial = millis();
-  //if (!fim) //Para o robô parar assim que o tempo de luta for excedido 
+  //if (!fim) //Para o robô parar assim que o tempo de luta for excedido
   //{
   do
   {
