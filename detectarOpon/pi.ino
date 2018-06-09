@@ -13,12 +13,13 @@
 #define KP 70
 #define KI 0.000001
 
-SharpIR sensor0(GP2YA41SK0F, A2);
-SharpIR sensor1(GP2YA41SK0F, A3);
+SharpIR sensor0(GP2YA41SK0F, A3);
+SharpIR sensor1(GP2YA41SK0F, A2);
 SharpIR sensor2(GP2YA41SK0F, A1);
 
 //Novo tipo para retorno das funções de leitura de sensores
 int distance[QTD_SENS_OPON] = {0};
+float base = 2.0;
 
 void setup()
 {
@@ -28,84 +29,79 @@ void setup()
 void prenchimento()
 {
     distance[0] = sensor0.getDistance();
-    distance[1] = sensor1.getDistance(); 
-    distance[2] = sensor2.getDistance(); 
+    distance[1] = sensor1.getDistance();
+    distance[2] = sensor2.getDistance();
 
-    for(int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
-        if(distance[i] < 12)
+        if (distance[i] < 12)
         {
-            Serial.print("Distancia "); Serial.print(i); Serial.print(" : ");
-            Serial.println(distance[i]); //Print the value to the serial monitor
-            //distance[i] = pow(2,i);
+            //Serial.print("Distancia "); Serial.print(i); Serial.print(" : ");
+            distance[i] = (int)(pow(base, i) + 0.5);
         }
         else
             distance[i] = 0;
     }
-    Serial.println();
+    //Serial.println();
 }
 
 //========Início das funções para o PID=======//
-int erro_pi(int distance[])
+float erro_pi(int distance[])
 {
     int ret = 0;
-    int erro[6] = {-45, 0, -23, 45, 23, 0};
+
+    int erro[6] = { -45, 0, -23, 45, 23, 0};
     delay(500);
 
-    for(int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         ret += distance[i];
     }
-    switch(ret)
+
+    switch (ret)
     {
         case 0:
-            /*
-               Serial.println("Opa"); //Print the value to the serial monitor
-               Serial.println(ret); //Print the value to the serial monitor
-               Serial.println(); //Print the value to the serial monitor
-             */
+            Serial.println("Funcao procura"); //Print the value to the serial monitor
+            Serial.println(ret); //Print the value to the serial monitor
+            Serial.println(); //Print the value to the serial monitor
+            break;
         case 1:
-            /*
-               Serial.println(erro[0]); //Print the value to the serial monitor
-               Serial.println(ret); //Print the value to the serial monitor
-               Serial.println(); //Print the value to the serial monitor
-             */
-            return erro[0];
+            Serial.println("DIREITA"); //Print the value to the serial monitor
+            Serial.println(ret); //Print the value to the serial monitor
+            Serial.println(); //Print the value to the serial monitor
+            return erro[0]; // TA RETORNANDO -45
         case 2:
-            /*
-               Serial.println(erro[1]); //Print the value to the serial monitor
-               Serial.println(ret); //Print the value to the serial monitor
-               Serial.println(); //Print the value to the serial monitor
-             */
-            return erro[1];
+            Serial.println("MEIO"); //Print the value to the serial monitor
+            Serial.println(ret); //Print the value to the serial monitor
+            Serial.println(); //Print the value to the serial monitor
+            return erro[1]; // TA RETORNANDO 0
         case 3:
-            /*
-               Serial.println(erro[2]); //Print the value to the serial monitor
-               Serial.println(ret); //Print the value to the serial monitor
-               Serial.println(); //Print the value to the serial monitor
-             */
-            return erro[2];
+            Serial.println("DIREITA MEIO"); //Print the value to the serial monitor
+            Serial.println(ret); //Print the value to the serial monitor
+            Serial.println(); //Print the value to the serial monitor
+            return erro[2]; // TA RETORNANDO -23
         case 4:
-            /*
-               Serial.println(erro[3]); //Print the value to the serial monitor
-               Serial.println(ret); //Print the value to the serial monitor
-               Serial.println(); //Print the value to the serial monitor
-             */
-            return erro[3];
+            Serial.println("ESQUERDA"); //Print the value to the serial monitor
+            Serial.println(ret); //Print the value to the serial monitor
+            Serial.println(); //Print the value to the serial monitor
+            return erro[3]; // TA RETORNANDO 45
         case 5:
             /*
-               Serial.println(erro[4]); //Print the value to the serial monitor
-               Serial.println(ret); //Print the value to the serial monitor
-               Serial.println(); //Print the value to the serial monitor
+               SERIA O CASO DE SÓ O DA DIREITA E O DA ESQUERDA ESTAREM ACIONADOS
+               E O DO MEIO NAO
+               ISSO TEORICAMENTE É IMPOSSIVEL
              */
-            return erro[4];
+            break;
+        case 6:
+            Serial.println("ESQUERDA E MEIO"); //Print the value to the serial monitor
+            Serial.println(ret); //Print the value to the serial monitor
+            Serial.println(); //Print the value to the serial monitor
+            return erro[4]; // TA RETORNANDO 23
         case 7:
-            /*
-               Serial.println(erro[5]); //Print the value to the serial monitor
-               Serial.println(ret); //Print the value to the serial monitor
-               Serial.println(); //Print the value to the serial monitor
-             */
-            return erro[5];
+            Serial.println("OS TRES"); //Print the value to the serial monitor
+            Serial.println(ret); //Print the value to the serial monitor
+            Serial.println(); //Print the value to the serial monitor
+            return erro[5]; // TA RETORNANDO 0
     }
 }
 
@@ -118,13 +114,13 @@ int correcao(int distance[])
     float erro;
     int pi;
 
-    if((erro = erro_pi(distance)) == 0.0)
+    if ((erro = erro_pi(distance)) == 0.0)
         somaErro = 0;
     else
         somaErro += erro;
 
     //DEFINIR VALOR DAS CONSTANTES
-    pi = (int)(KP*erro)+(KI*somaErro);
+    pi = (int)(KP * erro) + (KI * somaErro);
     tempo = millis();
 
     return pi;
@@ -138,7 +134,7 @@ void controle(int pi)
 
 void motorDir (int potencia)
 {
-    if (potencia > 0){
+    if (potencia > 0) {
         digitalWrite(MOTOR_D, LOW);
         analogWrite(MOTOR_D, abs(potencia));
     }
@@ -150,7 +146,7 @@ void motorDir (int potencia)
 }
 void motorEsq(int potencia)
 {
-    if(potencia > 0)
+    if (potencia > 0)
     {
         digitalWrite(MOTOR_E, LOW);
         analogWrite(MOTOR_E, abs(potencia));
