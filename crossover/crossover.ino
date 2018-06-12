@@ -1,84 +1,64 @@
 #include <QTRSensors.h>
 #include <SharpIR.h>
+
+//=========MOTORES====================
 #define MOTOR_E1 6 //IN1 ptH
 #define MOTOR_E2 5 //IN2 ptH
 #define MOTOR_D1 11 //IN3 ptH
 #define MOTOR_D2 10 //IN4 ptH
 
-#define NUM_VELOCIDADES 6 //Número de tipos de velocidades (para o mov. aleatório)
-
+//=============DEBUG===================
 #define DELAY 500
 #define DEBUG_OPON 1
 #define DEBUG_BORDA 0
 #define DEBUG_MOTOR 0
 
-/*
-  //Velocidades
-  #define VEL_MAX_PADRAO 110
-  #define VEL_MIN_PADRAO
-  #define VEL_ESQ_CURVA_DIR 90
-  #define VEL_DIR_CURVA_DIR 55
-  #define VEL_ESQ_CURVA_ESQ 55
-  #define VEL_DIR_CURVA_ESQ 90
-  #define VEL_GIRO 100
-*/
-//Velocidades
+//=========Velocidades=================
 #define VEL_MAX_PADRAO 255
-//#define VEL_MIN_PADRAO
+#define VEL_MIN_PADRAO
 #define VEL_ESQ_CURVA_DIR 200
 #define VEL_DIR_CURVA_DIR 110
 #define VEL_ESQ_CURVA_ESQ 110
 #define VEL_DIR_CURVA_ESQ 150
 #define VEL_GIRO 160
 #define QTD_SENS_OPON 3
-//////////////////////////////////////////// SHARP IR
+//========== SHARP IR=================
 SharpIR sensor0(GP2YA41SK0F, A3);
 SharpIR sensor1(GP2YA41SK0F, A2);
 SharpIR sensor2(GP2YA41SK0F, A1);
 int distance[QTD_SENS_OPON] = {0};
 
+//==========PI========================
 float base = 2.0;
 
 #define VBASE 200
 #define KP 70
 #define KI 0.001
-//////////////////////////////////////////////
 
-//Tempos de movimentação
+//==========Tempos de movimentação==============
 #define TEMPO_CURVA 900
 #define TEMPO_MOV_LINEAR 1000 //PROVISÓRIO
 
-
-//======DEFINIÇÃO TEMPO DA LUTA=================
+//================TEMPO DA LUTA=================
 unsigned long tempoInicial = 0;
 bool fim = false;
 #define TEMPO_FIM 180000 //180s - 3 min
-//==============================================
-int codReacao[2];//Array p/ armazenar Código para Reação de Borda
 
+
+//===========DEFINIÇÕES IR_BORDA==================================================================
 #define QTD_SENS_BORDA_F   8   // number of sensors used     8-2 sensores (por causa da falha)
 #define QTD_SENS_BORDA_T 2   //QTD de sensores de trás
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low (não diminuir para 1000, pois os sensores do array ficarão sempre em 1)
-#define EMITTER_PIN   A0   // emitter is controlled by digital pin 2 (serve só para o array e, pelo Proteus, não está conectado na placa. A conexão será feita)
+#define EMITTER_PIN   A0   // emitter is controlled by digital pin A0 (serve só para o array)
 
+int codReacao[2];//Array p/ armazenar Código para Reação de Borda
 
 unsigned int ValoresQtrrc8[QTD_SENS_BORDA_F];
 unsigned int ValoresQtrrc2[QTD_SENS_BORDA_T];
 
-int velocidades [NUM_VELOCIDADES] = { -255, -230, -200, 200, 230, 255};
-//===============================================================================
-/*
-  Pino D13 foi transportado para o 4º sensor e receberá valor sempre 0, pois está enviando valores sempre baixos (1).
-  Os valores baixos são motivados pela má interação dos sensores com a presença do LED SMD do Arduino, em pino compartilhado.
-  [RESOLVIDO: Continuidade]O penúltimo sensor (na porta 3) está enviando valor sempre alto (0), mas isso poderá ser ignorado,
-  pois ele não está na extremidade e está sempre como 0.
-*/
-QTRSensorsRC qtrrc8((unsigned char[]) {
-  8, 12, 9, 13, 7, 4, 3, 2
-}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
-QTRSensorsRC qtrrc2((unsigned char[]) {
-  A4, A5
-}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
+
+QTRSensorsRC qtrrc8((unsigned char[]) {8, 12, 9, 13, 7, 4, 3, 2}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc2((unsigned char[]) {A4, A5}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
 
 
 /*
@@ -101,7 +81,6 @@ void lerSensorBorda(unsigned int * valSensoresBorda, int tamanhoArray)
   //Contornando "falhas" da conexão pino D13
   valSensoresBorda[3] = 0;
 
-  //DEBUG LEITURA DE SENSORES
   //================================================================================
   imprimirDebugBorda(valSensoresBorda, tamanhoArray);
   //================================================================================
@@ -124,33 +103,22 @@ void detectarBorda (unsigned int * sensoresFrente, unsigned int * sensoresTras, 
   {
     if (i < metadeQtdF) //(0..3)
     {
-      retorno[0] += sensoresFrente[i];
-      //   Serial.print("FE ");
-      // Serial.println(retorno[0]);
+      retorno[0] += sensoresFrente[i];//Valores dos sensores frente-esq. na posição esq.
     }
 
     else //(4..7)
     {
-      retorno[1] += sensoresFrente[i];
-      //   Serial.print("FD ");
-      //   Serial.println(retorno[1]);
+      retorno[1] += sensoresFrente[i];//Valor do sensor frente-dir. na posição dir.
     }
   }
-  retorno[1] -= (sensoresTras[0]); //Valor do sensor esq. na posição dir.
-  // Serial.print("TE ");
-  // Serial.println(retorno[1]);
-
-  retorno[0] -= (sensoresTras[1]); //Valor do sensor dir. na posição esq.
-  //  Serial.print("TD ");
-  //  Serial.println(retorno[0]);
-
+  retorno[1] -= (sensoresTras[0]); //Valor do sensor trás-esq. na posição dir.
+  retorno[0] -= (sensoresTras[1]); //Valor do sensor trás-dir. na posição esq.
   return;
 }
 
 /*
-  Função que lerá os sensores Sharp e detectará ou não o oponente
+  Função para preenchimento do array de valores dos sensores Sharp (ver oponente)
 */
-
 void preenchimento()
 {
   distance[0] = sensor0.getDistance();
@@ -169,6 +137,9 @@ void preenchimento()
   }
 }
 
+/*
+  Função que lerá os valores dos sensores Sharp e determinará ou não a detecção
+*/
 int detectaOpon()
 {
   int ret = 0;
@@ -256,7 +227,6 @@ float erro_pi()
 
 int correcao()
 {
-  /////////////////////////////////////////
   static float erroAnt= 0, somaErro= 0;
   static long int deltaT= 1, betaT= 1;
   float erro;
@@ -325,7 +295,6 @@ void reacaoBorda (int * codigoReacao)
 
       do
       {
-        //movimentacao (-255, -255);
         movimentacao (-VEL_MAX_PADRAO, -VEL_MAX_PADRAO);
 
         //================================================================================
@@ -346,7 +315,6 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        //movimentacao (255, 200);
         movimentacao (VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR);
 
         //================================================================================
@@ -356,7 +324,6 @@ void reacaoBorda (int * codigoReacao)
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
         lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
-
 
       } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] > 0 && codigoReacao[1] < 0));
 
@@ -368,9 +335,7 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        //movimentacao (200, 255);
         movimentacao (VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ);
-
 
         //================================================================================
         imprimirDebugMotor(VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ, "Curva para Esquerda");
@@ -379,7 +344,6 @@ void reacaoBorda (int * codigoReacao)
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
         lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
-
 
       } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] < 0 && codigoReacao[1] > 0));
       tempo = 0;
@@ -390,9 +354,7 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        //  movimentacao (255, 255);
         movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO);
-
 
         //================================================================================
         imprimirDebugMotor(VEL_MAX_PADRAO, VEL_MAX_PADRAO, "Para Frente");
@@ -401,7 +363,6 @@ void reacaoBorda (int * codigoReacao)
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
         lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
         detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
-
 
       } while (((millis() - tempo) <= 2000) && (codigoReacao[0] < 0 && codigoReacao[1] < 0));
       tempo = 0;
@@ -416,7 +377,6 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-          //movimentacao (255, -255);
           movimentacao (VEL_GIRO, -VEL_GIRO);
 
           //================================================================================
@@ -429,10 +389,7 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-
-          //movimentacao (240, 200);
           movimentacao (VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR);
-
 
           //================================================================================
           imprimirDebugMotor(VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR, "Curva à Direita");
@@ -445,25 +402,19 @@ void reacaoBorda (int * codigoReacao)
           //&& ao invés de ||: porque caso a detecção mude antes do fim de uma reação, ele já se corrige
         } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] > 0 && codigoReacao[1] == 0)); // Consome o tempo
 
-
       } while (codigoReacao[0] > 0 && codigoReacao[1] == 0);
-
 
       tempo = 0;
       //parar();
     }
 
-
     else if (codigoReacao[0] == 0 && codigoReacao[1] > 0)
     {
-
       do {
         tempo = millis();
         do
         {
-          //movimentacao (0, 255);
           movimentacao (-VEL_GIRO, VEL_GIRO);
-
 
           //================================================================================
           imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Virando à Esquerda");
@@ -475,10 +426,7 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-
-          //movimentacao (200, 240);
           movimentacao (VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ);
-
 
           //================================================================================
           imprimirDebugMotor(VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ, "Curva à Esquerda");
@@ -502,9 +450,7 @@ void reacaoBorda (int * codigoReacao)
 
       do
       {
-        //movimentacao (255, 255);
         movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO);
-
 
         //================================================================================
         imprimirDebugMotor(VEL_MAX_PADRAO, VEL_MAX_PADRAO, "Indo para Frente");
@@ -529,31 +475,8 @@ void reacaoBorda (int * codigoReacao)
   caso necessário.
 */
 void procurar ()
-{
- 
+{ 
   //Serial.println("Nova procura\n");
-  /*
-    unsigned long tempoMovimento = 0;
-    int valMaxRand = (sizeof(velocidades) / sizeof(velocidades[0]));
-    int randPosicao = 0;
-    int velociRandE = 0;
-    int velociRandD = 0;
-    //Definindo velocidade para o motor da esquerda
-    randomSeed(analogRead(A6)); //Uma porta analógica desocupada
-    randPosicao = random (0, valMaxRand);     //entre min=0 e max-1
-    velociRandE = velocidades[randPosicao];
-    //Definindo velocidade para o motor da direita
-    randomSeed(analogRead(A6));
-    randPosicao = random (0, valMaxRand);
-    velociRandD = velocidades[randPosicao];
-    velociRandD *= (((velociRandE < 0) && (velociRandD < 0)) ? (-1) : 1); //Evita que o robô dê ré durante a busca.
-    tempoMovimento = millis();
-  */
-  //inicia a movimentação com as verificações
-  //do
-  //{
-  //    movimentacao (velociRandE, velociRandD);
-  
   //movimentacao (255, 255);
   
   lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -569,17 +492,7 @@ void procurar ()
     int pi = 0;
     pi = correcao();
     controle(pi);
-
-    /*
-        //===============================Debug
-        Serial.print("Aleatorio com: ");
-        Serial.print(velociRandE);
-        Serial.print('\t');
-        Serial.println(velociRandD);
-        //===============================Debug
-    */
-    // } while ((millis() - tempoMovimento) <= 3000);
-
+    
     //Serial.println("Fim da procura\n");
   }
 }
