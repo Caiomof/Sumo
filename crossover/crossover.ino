@@ -57,8 +57,12 @@ unsigned int ValoresQtrrc8[QTD_SENS_BORDA_F];
 unsigned int ValoresQtrrc2[QTD_SENS_BORDA_T];
 
 
-QTRSensorsRC qtrrc8((unsigned char[]) {8, 12, 9, 13, 7, 4, 3, 2}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
-QTRSensorsRC qtrrc2((unsigned char[]) {A4, A5}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc8((unsigned char[]) {
+  8, 12, 9, 13, 7, 4, 3, 2
+}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc2((unsigned char[]) {
+  A4, A5
+}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
 
 
 /*
@@ -124,7 +128,7 @@ void preenchimento()
   distance[0] = sensor0.getDistance();
   distance[1] = sensor1.getDistance();
   distance[2] = sensor2.getDistance();
-  
+
   for (int i = 0; i < 3; i++)
   {
     if (distance[i] < 12)
@@ -143,9 +147,9 @@ void preenchimento()
 int detectaOpon()
 {
   int ret = 0;
-  
+
   preenchimento();
-  
+
   for (int i = 0; i < 3; i++)
     ret += distance[i];
 
@@ -158,44 +162,20 @@ float erro_pi()
   int erro[6] = {45, 0, 23, -45, -23, 0};
 
   delay(500);
-  
+
   switch (combin)
   {
     case 1:
-      if (DEBUG_OPON)
-      {
-        Serial.println("DIREITA"); //Print the value to the serial monitor
-        Serial.println(combin); //Print the value to the serial monitor
-        Serial.println(); //Print the value to the serial monitor
-        Serial.println(erro[0]);
-      }
+      imprimirDebugOpon ("DIREITA", combin, erro[0]);
       return erro[0]; // TA RETORNANDO 45
     case 2:
-      if (DEBUG_OPON)
-      {
-        Serial.println("MEIO"); //Print the value to the serial monitor
-        Serial.println(combin); //Print the value to the serial monitor
-        Serial.println(); //Print the value to the serial monitor
-        Serial.println(erro[1]);
-      }
+      imprimirDebugOpon ("MEIO", combin, erro[1]);
       return erro[1]; // TA RETORNANDO 0
     case 3:
-      if (DEBUG_OPON)
-      {
-        Serial.println("DIREITA MEIO"); //Print the value to the serial monitor
-        Serial.println(combin); //Print the value to the serial monitor
-        Serial.println(); //Print the value to the serial monitor
-        Serial.println(erro[2]);
-      }
+      imprimirDebugOpon ("DIREITA MEIO", combin, erro[2]);
       return erro[2]; // TA RETORNANDO 23
     case 4:
-      if (DEBUG_OPON)
-      {
-        Serial.println("ESQUERDA"); //Print the value to the serial monitor
-        Serial.println(combin); //Print the value to the serial monitor
-        Serial.println(); //Print the value to the serial monitor
-        Serial.println(erro[3]);
-      }
+      imprimirDebugOpon ("ESQUERDA", combin, erro[3]);
       return erro[3]; // TA RETORNANDO -45
     case 5:
       /*
@@ -205,77 +185,75 @@ float erro_pi()
       */
       break;
     case 6:
-      if (DEBUG_OPON)
-      {
-        Serial.println("ESQUERDA E MEIO"); //Print the value to the serial monitor
-        Serial.println(combin); //Print the value to the serial monitor
-        Serial.println(); //Print the value to the serial monitor
-        Serial.println(erro[4]);
-      }
+      imprimirDebugOpon ("ESQUERDA E MEIO", combin, erro[4]);
       return erro[4]; // TA RETORNANDO -23
     case 7:
-      if (DEBUG_OPON)
-      {
-        Serial.println("OS TRES"); //Print the value to the serial monitor
-        Serial.println(combin); //Print the value to the serial monitor
-        Serial.println(); //Print the value to the serial monitor
-        Serial.println(erro[5]);
-      }
+      imprimirDebugOpon ("OS TRES", combin, erro[5]);
       return erro[5]; // TA RETORNANDO 0
   }
 }
 
 int correcao()
 {
-  static float erroAnt= 0, somaErro= 0;
-  static long int deltaT= 1, betaT= 1;
+  static float erroAnt = 0, somaErro = 0;
+  static long int deltaT = 1, betaT = 1;
   float erro;
   int pi;
 
-   if(deltaT != 1)
-    deltaT= millis() - deltaT;
-  
+  if (deltaT != 1)
+    deltaT = millis() - deltaT;
+
   if ((erro = erro_pi()) == 0.0)
   {
-    betaT= deltaT;
+    betaT = deltaT;
     somaErro = 0;
   }
   else
   {
-    betaT+= deltaT;
-    somaErro+= erro;
+    betaT += deltaT;
+    somaErro += erro;
   }
 
   //DEFINIR VALOR DAS CONSTANTES
-  pi = (int)(KP * erro) + (KI * somaErro/(betaT));
+  pi = (int)(KP * erro) + (KI * somaErro / (betaT));
 
-  deltaT= millis();
-  erroAnt= erro;
-  
+  deltaT = millis();
+  erroAnt = erro;
+
   //Serial.println(pi); //Print the value to the serial monitor
-  
+
   return pi;
 }
 
 void controle(int pi)
 {
 
-  if( pi < 0)
+  if ( pi < 0)
   {
-    pi = map(pi, 0, 3150, 0, (255 - VBASE) ); /*255 - Maximo*/
+    pi = map(pi, 0, 3150, 0, (255 - VBASE)); /*255 - Maximo*/
+    motorDir(VBASE - pi);
     motorEsq(VBASE + pi);
+
+    //================================================================================
+    imprimirDebugMotorPI ((VBASE + pi), (VBASE - pi), "PI < 0", pi);
+    //================================================================================
   }
-  else if(pi > 0)
+  else if (pi > 0)
   {
     pi = map(pi, 3150, 0, (255 - VBASE), 0 ); /*255 - Maximo*/
     motorDir(VBASE - pi);
+    motorEsq(VBASE + pi);
+    //================================================================================
+    imprimirDebugMotorPI ((VBASE + pi), (VBASE - pi), "PI > 0", pi);
+    //================================================================================
   }
-  else if(pi == 0)
+  else if (pi == 0)
   {
-   movimentacao (255, 255);
+    movimentacao (255, 255);
+    //================================================================================
+    imprimirDebugMotorPI (255, 255, "PI == 0", pi);
+    //================================================================================
   }
-
-  Serial.println(pi); //Print the value to the serial monitor
 }
 
 /*
@@ -475,10 +453,10 @@ void reacaoBorda (int * codigoReacao)
   caso necessário.
 */
 void procurar ()
-{ 
+{
   //Serial.println("Nova procura\n");
   //movimentacao (255, 255);
-  
+
   lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
   lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
   detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
@@ -487,12 +465,12 @@ void procurar ()
   {
     reacaoBorda (codReacao);
   }
-  else if (detectaOpon()) 
+  else if (detectaOpon())
   {
     int pi = 0;
     pi = correcao();
     controle(pi);
-    
+
     //Serial.println("Fim da procura\n");
   }
 }
@@ -577,8 +555,32 @@ void imprimirDebugMotor (int motorEsq, int motorDir, const char msg [25]) {
     delay (DELAY);
   }
 }
-void imprimirDebugOpon () {
-  if (DEBUG_OPON) {}
+void imprimirDebugMotorPI (int motorEsq, int motorDir, const char msg [25], int pi) {
+
+  if (DEBUG_MOTOR)
+  {
+    Serial.print("PI:");
+    Serial.print("  ");
+    Serial.print (pi);
+    Serial.print("   |");
+    Serial.print (msg);
+    Serial.print("| Motores: ");
+    Serial.print (motorEsq);
+    Serial.print('\t');
+    Serial.println (motorDir);
+    delay (DELAY);
+  }
+
+}
+
+void imprimirDebugOpon (const char posicaoSensor [20], int combin, int erro) {
+  if (DEBUG_OPON) {
+    Serial.print(posicaoSensor); //Print the value to the serial monitor
+    Serial.print("   |");
+    Serial.println(combin); //Print the value to the serial monitor
+    Serial.println("   |");
+    Serial.println(erro);
+  }
 }
 //==================================================================
 void setup()
