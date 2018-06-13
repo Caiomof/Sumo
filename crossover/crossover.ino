@@ -11,7 +11,8 @@
 #define DELAY 500
 #define DEBUG_OPON 1
 #define DEBUG_BORDA 0
-#define DEBUG_MOTOR 0
+#define DEBUG_MOTOR_BORDA 0
+#define DEBUG_MOTOR_PI 0
 
 //=========Velocidades=================
 #define VEL_MAX_PADRAO 255
@@ -537,7 +538,7 @@ void imprimirDebugBorda(unsigned int * valSensoresBorda, int tamanhoArray)
   }
 }
 void imprimirDebugMotor (int motorEsq, int motorDir, const char msg [25]) {
-  if (DEBUG_MOTOR)
+  if (DEBUG_MOTOR_BORDA)
   {
     Serial.print("Codigo da Reacao:");
     Serial.print("  ");
@@ -557,7 +558,7 @@ void imprimirDebugMotor (int motorEsq, int motorDir, const char msg [25]) {
 }
 void imprimirDebugMotorPI (int motorEsq, int motorDir, const char msg [25], int pi) {
 
-  if (DEBUG_MOTOR)
+  if (DEBUG_MOTOR_PI)
   {
     Serial.print("PI:");
     Serial.print("  ");
