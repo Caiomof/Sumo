@@ -14,16 +14,22 @@
 #define DEBUG_MOTOR_BORDA 0
 #define DEBUG_MOTOR_PI 0
 
-//=========Velocidades=================
-#define VEL_MAX_PADRAO 255
+//===Sentidos/Estados dos motores=======
+#define FRENTE 1
+#define PARADO 0
+#define TRAS -1
+/*
+//=========Velocidades===========
+#define FRENTE 255
 #define VEL_MIN_PADRAO
 #define VEL_ESQ_CURVA_DIR 200
 #define VEL_DIR_CURVA_DIR 110
 #define VEL_ESQ_CURVA_ESQ 110
 #define VEL_DIR_CURVA_ESQ 150
-#define VEL_GIRO 160
-#define QTD_SENS_OPON 3
+#define FRENTE 160
+*/
 //========== SHARP IR=================
+#define QTD_SENS_OPON 3
 SharpIR sensor0(GP2YA41SK0F, A3);
 SharpIR sensor1(GP2YA41SK0F, A2);
 SharpIR sensor2(GP2YA41SK0F, A1);
@@ -274,10 +280,10 @@ void reacaoBorda (int * codigoReacao)
 
       do
       {
-        movimentacao (-VEL_MAX_PADRAO, -VEL_MAX_PADRAO);
+        movimentacao (TRAS, TRAS);
 
         //================================================================================
-        imprimirDebugMotor(-VEL_MAX_PADRAO, -VEL_MAX_PADRAO, "Indo para trás");
+        imprimirDebugMotor(TRAS, TRAS, "Indo para trás");
         //================================================================================
 
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -294,10 +300,10 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        movimentacao (VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR);
+        movimentacao (FRENTE, PARADO);
 
         //================================================================================
-        imprimirDebugMotor(255, 200, "Curva para Direita");
+        imprimirDebugMotor(FRENTE, PARADO, "Curva para Direita");
         //================================================================================
 
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -314,10 +320,10 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        movimentacao (VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ);
+        movimentacao (PARADO, FRENTE);
 
         //================================================================================
-        imprimirDebugMotor(VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ, "Curva para Esquerda");
+        imprimirDebugMotor(PARADO, FRENTE, "Curva para Esquerda");
         //================================================================================
 
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -333,10 +339,10 @@ void reacaoBorda (int * codigoReacao)
       tempo = millis();
       do
       {
-        movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO);
+        movimentacao (FRENTE, FRENTE);
 
         //================================================================================
-        imprimirDebugMotor(VEL_MAX_PADRAO, VEL_MAX_PADRAO, "Para Frente");
+        imprimirDebugMotor(FRENTE, FRENTE, "Para Frente");
         //================================================================================
 
         lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -356,10 +362,10 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-          movimentacao (VEL_GIRO, -VEL_GIRO);
+          movimentacao (FRENTE, TRAS);
 
           //================================================================================
-          imprimirDebugMotor(VEL_GIRO, -VEL_GIRO, "Virando à Direita");
+          imprimirDebugMotor(FRENTE, TRAS, "Virando à Direita");
           //================================================================================
 
         } while ((millis() - tempo) <= TEMPO_CURVA); //Consome o tempo
@@ -368,10 +374,10 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-          movimentacao (VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR);
+          movimentacao (FRENTE, PARADO);
 
           //================================================================================
-          imprimirDebugMotor(VEL_ESQ_CURVA_DIR, VEL_DIR_CURVA_DIR, "Curva à Direita");
+          imprimirDebugMotor(FRENTE, PARADO, "Curva à Direita");
           //================================================================================
 
           lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -393,10 +399,10 @@ void reacaoBorda (int * codigoReacao)
         tempo = millis();
         do
         {
-          movimentacao (-VEL_GIRO, VEL_GIRO);
+          movimentacao (TRAS, FRENTE);
 
           //================================================================================
-          imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Virando à Esquerda");
+          imprimirDebugMotor(TRAS, FRENTE, "Virando à Esquerda");
           //================================================================================
 
         } while ((millis() - tempo) <= TEMPO_CURVA);
@@ -405,10 +411,10 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-          movimentacao (VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ);
+          movimentacao (PARADO, FRENTE);
 
           //================================================================================
-          imprimirDebugMotor(VEL_ESQ_CURVA_ESQ, VEL_DIR_CURVA_ESQ, "Curva à Esquerda");
+          imprimirDebugMotor(PARADO, FRENTE, "Curva à Esquerda");
           //================================================================================
 
           lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
@@ -429,10 +435,10 @@ void reacaoBorda (int * codigoReacao)
 
       do
       {
-        movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO);
+        movimentacao (FRENTE, FRENTE);
 
         //================================================================================
-        imprimirDebugMotor(VEL_MAX_PADRAO, VEL_MAX_PADRAO, "Indo para Frente");
+        imprimirDebugMotor(FRENTE, FRENTE, "Indo para Frente");
         //================================================================================
       } while ((millis() - tempo) <= TEMPO_MOV_LINEAR);
 
@@ -447,6 +453,7 @@ void reacaoBorda (int * codigoReacao)
 
   } while (codigoReacao[0] != 0 || codigoReacao[1] != 0);
 }
+
 
 /*
   Função inicial que executa os movimento de busca e
@@ -476,43 +483,50 @@ void procurar ()
   }
 }
 
-void movimentacao(int potenciaE, int potenciaD) {
-  motorEsq(potenciaE);
-  motorDir(potenciaD);
+/*
+ * Estados:
+ *  1 -> FRENTE
+ *  0 -> PARADO
+ * -1 -> TRAS
+ */
+void movimentacao(int estadoE, int estadoD) {
+  motorEsq(estadoE);
+  motorDir(estadoD);
 }
 
-void parar ()
+/*
+ * Com base no robô seguidor Marquinho
+ *  1 -> FRENTE
+ *  0 -> PARADO
+ * -1 -> TRAS
+ */
+void motorDir (int estado)
 {
-  motorDir(0);
-  motorEsq(0);
-  //Serial.println("parou");
-}
-
-//Com base no robô seguidor Marquinho
-void motorDir (int potencia)
-{
-  if (potencia > 0) {
+  switch (estado){
+    case 1:
+    digitalWrite(MOTOR_D1, HIGH);
     digitalWrite(MOTOR_D2, LOW);
-    analogWrite(MOTOR_D1, abs(potencia));
-  }
-  else
-  {
+    case 0:
+    digitalWrite(MOTOR_D1, LOW);
+    digitalWrite(MOTOR_D2, LOW);
+    case -1:
     digitalWrite (MOTOR_D1, LOW);
-    analogWrite (MOTOR_D2, abs(potencia));
-  }
+    digitalWrite (MOTOR_D2, HIGH);
+    }
 }
-void motorEsq(int potencia)
+void motorEsq(int estado)
 {
-  if (potencia > 0)
-  {
+  switch (estado){
+    case 1:
+    digitalWrite(MOTOR_E1, HIGH);
     digitalWrite(MOTOR_E2, LOW);
-    analogWrite(MOTOR_E1, abs(potencia));
-  }
-  else
-  {
+    case 0:
     digitalWrite(MOTOR_E1, LOW);
-    analogWrite(MOTOR_E2, abs(potencia));
-  }
+    digitalWrite(MOTOR_E2, LOW);
+    case -1:
+    digitalWrite(MOTOR_E1, LOW);
+    digitalWrite(MOTOR_E2, HIGH);
+    }
 }
 
 //===============FUNÇÕES DE DEBUD=====================================
