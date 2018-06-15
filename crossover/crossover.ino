@@ -59,7 +59,7 @@ bool fim = false;
 #define QTD_SENS_BORDA_F   8   // number of sensors used     8-2 sensores (por causa da falha)
 #define QTD_SENS_BORDA_T 2   //QTD de sensores de trás
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low (não diminuir para 1000, pois os sensores do array ficarão sempre em 1)
-#define EMITTER_PIN   A0   // emitter is controlled by digital pin A0 (serve só para o array)
+#define EMITTER_PIN   A7   // emitter is controlled by digital pin A0 (serve só para o array)
 
 int codReacao[2];//Array p/ armazenar Código para Reação de Borda
 
@@ -67,13 +67,8 @@ unsigned int ValoresQtrrc8[QTD_SENS_BORDA_F];
 unsigned int ValoresQtrrc2[QTD_SENS_BORDA_T];
 
 
-QTRSensorsRC qtrrc8((unsigned char[]) 
-{
-        8, 12, 9, 13, 7, 4, 3, 2
-        }, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
-QTRSensorsRC qtrrc2((unsigned char[]) {
-        A4, A5
-        }, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc8((unsigned char[]) {A0, 12, 9, 8, 7, 4, 3, 2}, QTD_SENS_BORDA_F, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc2((unsigned char[]) {A4, A5}, QTD_SENS_BORDA_T, TIMEOUT, EMITTER_PIN);
 
 
 /*
