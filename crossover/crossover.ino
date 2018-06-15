@@ -2,10 +2,10 @@
 #include <SharpIR.h>
 
 //=========MOTORES====================
-#define MOTOR_E1 6 //IN1 ptH
-#define MOTOR_E2 5 //IN2 ptH
-#define MOTOR_D1 11 //IN3 ptH
-#define MOTOR_D2 10 //IN4 ptH
+#define MOTOR_D1 6 //IN2 ptH - DIREITO
+#define MOTOR_D2 5 //IN1 ptH - DIREITO
+#define MOTOR_E1 11 //IN4 ptH - ESQUERDO
+#define MOTOR_E2 10 //IN3 ptH - ESQUERDO
 
 //=============DEBUG===================
 #define DELAY 500
@@ -180,42 +180,49 @@ int erro_pi()
             imprimirDebugOpon ("DIREITA", combin, erro[0]);
             return erro[0]; // TA RETORNANDO 45
         case 2:
-            imprimirDebugOpon ("MEIO", combin, erro[1]);
-            return erro[1]; // TA RETORNANDO 0
+               imprimirDebugOpon ("MEIO", combin, erro[1]);
+               return erro[1]; // TA RETORNANDO 0
         case 3:
-            imprimirDebugOpon ("DIREITA MEIO", combin, erro[2]);
-            return erro[2]; // TA RETORNANDO 23
+               imprimirDebugOpon ("DIREITA MEIO", combin, erro[2]);
+               return erro[2]; // TA RETORNANDO 23
         case 4:
-            imprimirDebugOpon ("ESQUERDA", combin, erro[3]);
-            return erro[3]; // TA RETORNANDO -45
+               imprimirDebugOpon ("DIREITA MEIO", combin, erro[2]);
+               return erro[3]; // TA RETORNANDO -45
         case 5:
-            /*
-               SERIA O CASO DE SÓ O DA DIREITA E O DA ESQUERDA ESTAREM ACIONADOS
-               E O DO MEIO NAO
-               ISSO TEORICAMENTE É IMPOSSIVEL
-             */
-            break;
+               /*
+                  SERIA O CASO DE SÓ O DA DIREITA E O DA ESQUERDA ESTAREM ACIONADOS
+                  E O DO MEIO NAO
+                  ISSO TEORICAMENTE É IMPOSSIVEL
+                */
+               break;
         case 6:
-            imprimirDebugOpon ("ESQUERDA E MEIO", combin, erro[4]);
-            return erro[4]; // TA RETORNANDO -23
+               imprimirDebugOpon ("ESQUERDA E MEIO", combin, erro[4]);
+               return erro[4]; // TA RETORNANDO -23
         case 7:
-            imprimirDebugOpon ("OS TRES", combin, erro[5]);
-            return erro[5]; // TA RETORNANDO 0
+               imprimirDebugOpon ("OS TRES", combin, erro[5]);
+               return erro[5]; // TA RETORNANDO 0
     }
 }
 
-int correcao(int pi)
+
+void correcao(int pi)
 {
     int RIP_PID;
 
     RIP_PID = erro_pi();
 
     if(RIP_PID == 1 || RIP_PID == 3) //DIREITO, DIREITA E MEIO
-        movimentacao(FRENTE, FRENTE);
+    {
+        movimentacao(FRENTE, TRAS);
+    }
     else if(RIP_PID == 4 || RIP_PID == 6) //ESQUERDA, ESQUERDA E MEIO
-        movimentacao(TRAS, TRAS);
+    {
+        movimentacao(TRAS, FRENTE);
+    }
     else if(RIP_PID == 2 || RIP_PID == 7) //MEIO E OS TRES
-        movimentacao(TRAS,FRENTE);
+    {
+        movimentacao(FRENTE,FRENTE);
+    }
 }
 
 /*
@@ -454,7 +461,26 @@ void movimentacao(int estadoE, int estadoD)
  *  0 -> PARADO
  * -1 -> TRAS
  */
-void motorDir (int estado)
+void motorEsq (int estado)
+{
+    switch (estado)
+    {
+        case 1:
+            digitalWrite(MOTOR_E1, HIGH);
+            digitalWrite(MOTOR_E2, LOW);
+            break;
+        case 0:
+            digitalWrite(MOTOR_E1, LOW);
+            digitalWrite(MOTOR_E2, LOW);
+            break;
+        case -1:
+            digitalWrite (MOTOR_E1, LOW);
+            digitalWrite (MOTOR_E2, HIGH);
+            break;
+    }
+}
+
+void motorDir(int estado)
 {
     switch (estado){
         case 1:
@@ -466,30 +492,11 @@ void motorDir (int estado)
             digitalWrite(MOTOR_D2, LOW);
             break;
         case -1:
-            digitalWrite (MOTOR_D1, LOW);
-            digitalWrite (MOTOR_D2, HIGH);
+            digitalWrite(MOTOR_D1, LOW);
+            digitalWrite(MOTOR_D2, HIGH);
             break;
     }
 }
-
-void motorEsq(int estado)
-{
-    switch (estado){
-        case 1:
-            digitalWrite(MOTOR_E1, HIGH);
-            digitalWrite(MOTOR_E2, LOW);
-            break;
-        case 0:
-            digitalWrite(MOTOR_E1, LOW);
-            digitalWrite(MOTOR_E2, LOW);
-            break;
-        case -1:
-            digitalWrite(MOTOR_E1, LOW);
-            digitalWrite(MOTOR_E2, HIGH);
-            break;
-    }
-}
-
 //===============FUNÇÕES DE DEBUD=====================================
 
 /* Como a função de leitura de sensores Borda é chamada uma vez para
