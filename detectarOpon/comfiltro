@@ -20,7 +20,7 @@
 #define TRAS -1
 
 //========== SHARP IR=================
-#define INT 1000
+#define INT 1000 // filtro da média
 #define QTD_SENS_OPON 3
 #define LIMITE 24
 #define LIMITE_MIN 2
