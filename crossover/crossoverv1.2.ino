@@ -454,7 +454,7 @@ void seguir()
 void procurar ()
 {
          //Serial.println("Nova procura\n");
-    movimentacao (PARADO, PARADO); // com while() tava funcionando
+ //   movimentacao (PARADO, PARADO); // com while() tava funcionando
 
     lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
     lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
