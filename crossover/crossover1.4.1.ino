@@ -20,9 +20,9 @@
 #define TRAS -1
 
 //========== SHARP IR=================
-#define INT 1000 //número de interaçoes do filtro
+#define INT 250 //número de interaçoes do filtro
 #define QTD_SENS_OPON 3
-#define LIMITE 22
+#define LIMITE 12
 SharpIR sensor0(GP2YA41SK0F, A1);
 SharpIR sensor1(GP2YA41SK0F, A2);
 SharpIR sensor2(GP2YA41SK0F, A3);
@@ -30,13 +30,11 @@ int distance[QTD_SENS_OPON] = {0};
 
 //==========PI========================
 float base = 2.0;
-
 /*
   #define VBASE 200
   #define KP 70
   #define KI 0.001
 */
-
 //==========Tempos de movimentação==============
 #define TEMPO_CURVA 500 //antes, 900
 #define TEMPO_MOV_LINEAR 1000 //PROVISÓRIO
@@ -45,7 +43,6 @@ float base = 2.0;
 unsigned long tempoInicial = 0;
 bool fim = false;
 #define TEMPO_FIM 180000 //180s - 3 min
-
 
 //===========DEFINIÇÕES IR_BORDA==================================================================
 #define QTD_SENS_BORDA_F   8   // number of sensors used     8-2 sensores (por causa da falha)
@@ -57,7 +54,6 @@ int codReacao[2];//Array p/ armazenar Código para Reação de Borda
 
 unsigned int ValoresQtrrc8[QTD_SENS_BORDA_F];
 unsigned int ValoresQtrrc2[QTD_SENS_BORDA_T];
-
 
 QTRSensorsRC qtrrc8((unsigned char[]) {
   A0, 12, 9, 8, 7, 4, 3, 2
@@ -86,12 +82,11 @@ void lerSensorBorda(unsigned int * valSensoresBorda, int tamanhoArray)
   }
   //Contornando "falhas" da conexão pino D13
   // valSensoresBorda[3] = 0;
-
+  
   //================================================================================
   imprimirDebugBorda(valSensoresBorda, tamanhoArray);
   //================================================================================
 }
-
 /*
    Função que verifica os array's de valores para cada sensor de borda e alimenta o array de retorno.
    'retorno' é um array de 2 posições que será preenchido com um codigo para a função de reação.
@@ -121,17 +116,16 @@ void detectarBorda (unsigned int * sensoresFrente, unsigned int * sensoresTras, 
   retorno[0] -= (sensoresTras[1]); //Valor do sensor trás-dir. na posição esq.
   return;
 }
-
 /*
    Função para preenchimento do array de valores dos sensores Sharp (ver oponente)
 */
 void preenchimento()
 {
+
 //  distance[0] = sensor0.getDistance();
 //  distance[1] = sensor1.getDistance();
 //  distance[2] = sensor2.getDistance();
-
-
+  
   for (int i = 0; i < 3; i++)
   {
      switch (i) {
@@ -177,7 +171,6 @@ int erro_pi()
   {
     case 0:
       return 0;
-
     case 2:
       imprimirDebugOpon ("MEIO", combin, erro[1]);
       return erro[1]; // TA RETORNANDO 0
@@ -188,10 +181,10 @@ int erro_pi()
       imprimirDebugOpon ("DIREITA", combin, erro[0]);
       return erro[0]; // TA RETORNANDO 45
     case 3:
-      imprimirDebugOpon ("DIREITA MEIO", combin, erro[2]);
+      imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
       return erro[2]; // TA RETORNANDO 23
     case 4:
-      imprimirDebugOpon ("DIREITA MEIO", combin, erro[2]);
+      imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
       return erro[3]; // TA RETORNANDO -45
     case 5:
       /*
@@ -203,10 +196,8 @@ int erro_pi()
     case 6:
       imprimirDebugOpon ("ESQUERDA E MEIO", combin, erro[4]);
       return erro[4]; // TA RETORNANDO -23
-
   }
 }
-
 
 void correcao(int pi)
 {
@@ -232,7 +223,6 @@ void correcao(int pi)
     imprimirDebugMotorCorrecao (FRENTE, FRENTE, "Corrigindo para a Frente", RIP_PID);
   }
 }
-
 /*
    Função que recebe a "tupla" com código de reação e age em conformidade.
    A prioridade é não sair da arena, por isto, nesta função não será verificada
@@ -247,7 +237,6 @@ void reacaoBorda (int * codigoReacao)
     if (codigoReacao[0] > 0 && codigoReacao[1] > 0)
     {
       tempo = millis();
-
       do
       {
         movimentacao (TRAS, TRAS);
@@ -341,7 +330,7 @@ void reacaoBorda (int * codigoReacao)
         } while ((millis() - tempo) <= TEMPO_CURVA); //Consome o tempo
 
         tempo = millis(); // Realimenta o tempo
-
+        
         do
         {
           movimentacao (FRENTE, PARADO);
@@ -423,8 +412,6 @@ void reacaoBorda (int * codigoReacao)
 
   } while (codigoReacao[0] != 0 || codigoReacao[1] != 0);
 }
-
-
 /*
    Função inicial que executa os movimento de busca e
    verifica os sensores de borda e oponente para reagir
@@ -458,13 +445,12 @@ void seguir()
     pi = erro_pi();
     correcao(pi);
   }
-  else
+  else // ESTRATEGIA AQUI!!!
   {
     movimentacao(PARADO, PARADO);
     Serial.print("Parado");
-  }
+  } /////////////////////!!!
 }
-
 
 void procurar ()
 {
@@ -474,15 +460,11 @@ void procurar ()
   lerSensorBorda(ValoresQtrrc8, QTD_SENS_BORDA_F); //preenche o array de valores
   lerSensorBorda(ValoresQtrrc2, QTD_SENS_BORDA_T); //preenche o array de valores
   detectarBorda(ValoresQtrrc8, ValoresQtrrc2, codReacao);
-
   /*  do{
       Serial.println ("SEGUINDO");
       seguir();
     }while(codReacao[0] == 0 || codReacao[1] == 0);
     Serial.println ("INDENTIFICOU A BORDA");*/
-
-
-
   if (codReacao[0] != 0 || codReacao[1] != 0)
   {
     //      Serial.println ("INDENTIFICOU A BORDA");
@@ -505,7 +487,6 @@ void movimentacao(int estadoE, int estadoD)
   motorEsq(estadoE);
   motorDir(estadoD);
 }
-
 /*
    Com base no robô seguidor Marquinho
     1 -> FRENTE
@@ -548,8 +529,7 @@ void motorDir(int estado)
       break;
   }
 }
-//===============FUNÇÕES DE DEBUD=====================================
-
+//===============FUNÇÕES DE DEBUG=====================================
 /* Como a função de leitura de sensores Borda é chamada uma vez para
    cada array de sensor (de 8 e de 2), basta ter apenas uma entrada
    para valSensorBorda e tamanhoArray na função imprimirDebugBorda.
@@ -591,8 +571,8 @@ void imprimirDebugMotor (int motorEsq, int motorDir, const char msg [25])
     delay (DELAY);
   }
 }
-void imprimirDebugMotorCorrecao  (int motorEsq, int motorDir, const char msg [25], int pi) {
-
+void imprimirDebugMotorCorrecao  (int motorEsq, int motorDir, const char msg [25], int pi) 
+{
   if (DEBUG_MOTOR_CORRECAO)
   {
     Serial.print("PI:");
@@ -606,10 +586,9 @@ void imprimirDebugMotorCorrecao  (int motorEsq, int motorDir, const char msg [25
     Serial.println (motorDir);
     delay (DELAY);
   }
-
 }
-
-void imprimirDebugOpon (const char posicaoSensor [20], int combin, int erro) {
+void imprimirDebugOpon (const char posicaoSensor [20], int combin, int erro) 
+{
   if (DEBUG_OPON) {
     Serial.print(posicaoSensor); //Print the value to the serial monitor
     Serial.print("   |");
