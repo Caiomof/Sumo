@@ -205,13 +205,13 @@ void correcao(int pi)
 
   RIP_PID = erro_pi();
 
-  if (RIP_PID == 1 || RIP_PID == 3) //DIREITO, DIREITA E MEIO
+  if (RIP_PID == 1) //DIREITO
   {
     //Serial.println("MOVIMENTO DIREITA -255,255");
     movimentacao(FRENTE, TRAS);
     imprimirDebugMotorCorrecao (FRENTE, TRAS, "Corrigindo aa Direita", RIP_PID);
   }
-  else if (RIP_PID == 4 || RIP_PID == 6) //ESQUERDA, ESQUERDA E MEIO
+  else if (RIP_PID == 4 ) //ESQUERDA
   {
     movimentacao(TRAS, FRENTE);
     imprimirDebugMotorCorrecao (TRAS, FRENTE, "Corrigindo aa Esquerda", RIP_PID);
