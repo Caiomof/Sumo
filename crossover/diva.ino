@@ -23,6 +23,13 @@
 #define INT 250 //número de interaçoes do filtro
 #define QTD_SENS_OPON 3
 #define LIMITE 12
+
+//========== CONSTANTES PI===========
+#define KP 70
+#define KI 0.000001
+
+#define VBASE 200
+
 SharpIR sensor0(GP2YA41SK0F, A1);
 SharpIR sensor1(GP2YA41SK0F, A2);
 SharpIR sensor2(GP2YA41SK0F, A3);
@@ -30,11 +37,6 @@ int distance[QTD_SENS_OPON] = {0};
 
 //==========PI========================
 float base = 2.0;
-/*
-#define VBASE 200
-#define KP 70
-#define KI 0.001
- */
 //==========Tempos de movimentação==============
 #define TEMPO_CURVA 500 //antes, 900
 #define TEMPO_MOV_LINEAR 1000 //PROVISÓRIO
@@ -340,7 +342,7 @@ int detectaOpon()
 int erro_pi()
 {
     int combin = detectaOpon();
-    int erro[6] = {1, 2, 3, 4, 6, 7};
+    int erro[6] = {-45, -23, 0, 23, 45, 0};
 
     switch (combin)
     {
@@ -348,7 +350,7 @@ int erro_pi()
             return 0;
         case 2:
             imprimirDebugOpon ("MEIO", combin, erro[1]);
-            return erro[1]; // TA RETORNANDO 0
+            return erro[2]; // TA RETORNANDO 0
         case 7:
             imprimirDebugOpon ("OS TRES", combin, erro[5]);
             return erro[5]; // TA RETORNANDO 0
@@ -357,10 +359,10 @@ int erro_pi()
             return erro[0]; // TA RETORNANDO 45
         case 3:
             imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
-            return erro[2]; // TA RETORNANDO 23
+            return erro[1]; // TA RETORNANDO 23
         case 4:
             imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
-            return erro[3]; // TA RETORNANDO -45
+            return erro[4]; // TA RETORNANDO -45
         case 5:
             /*
                SERIA O CASO DE SÓ O DA DIREITA E O DA ESQUERDA ESTAREM ACIONADOS
@@ -370,10 +372,10 @@ int erro_pi()
             break;
         case 6:
             imprimirDebugOpon ("ESQUERDA E MEIO", combin, erro[4]);
-            return erro[4]; // TA RETORNANDO -23
+            return erro[3]; // TA RETORNANDO -23
     }
 }
-
+/*
 void correcao(int pi)
 {
     int RIP_PID;
@@ -397,6 +399,44 @@ void correcao(int pi)
         movimentacao(FRENTE, FRENTE);
         imprimirDebugMotorCorrecao (FRENTE, FRENTE, "Corrigindo para a Frente", RIP_PID);
     }
+}*/
+int correcao(int distance[])
+{
+
+    static float somaErro = 0;
+    static int tempo = 0;
+    float erro;
+    int pi;
+
+    if ((erro = erro_pi(distance)) == 0.0)
+        somaErro = 0;
+    else
+        somaErro += erro;
+
+    //DEFINIR VALOR DAS CONSTANTES
+    pi = (int)(KP * erro) + (KI * somaErro);
+    tempo = millis();
+
+    return pi;
+}int correcao(int distance[])
+{
+
+
+    static float somaErro = 0;
+    static int tempo = 0;
+    float erro;
+    int pi;
+
+    if ((erro = erro_pi(distance)) == 0.0)
+        somaErro = 0;
+    else
+        somaErro += erro;
+
+    //DEFINIR VALOR DAS CONSTANTES
+    pi = (int)(KP * erro) + (KI * somaErro);
+    tempo = millis();
+
+    return pi;
 }
 /*
    Função que recebe a "tupla" com código de reação e age em conformidade.
@@ -475,10 +515,10 @@ Estados:
 -1 -> TRAS
  */
 /*void movimentacao(int estadoE, int estadoD)
-{
-    motorEsq(estadoE);
-    motorDir(estadoD);
-}*/
+  {
+  motorEsq(estadoE);
+  motorDir(estadoD);
+  }*/
 /*
    Com base no robô seguidor Marquinho
    1 -> FRENTE
@@ -519,41 +559,41 @@ void motorEsq(int potencia)
 
 
 /*void motorEsq (int estado)
-{
-    switch (estado)
-    {
-        case 1:
-            digitalWrite(MOTOR_E1, HIGH);
-            digitalWrite(MOTOR_E2, LOW);
-            break;
-        case 0:
-            digitalWrite(MOTOR_E1, LOW);
-            digitalWrite(MOTOR_E2, LOW);
-            break;
-        case -1:
-            digitalWrite (MOTOR_E1, LOW);
-            digitalWrite (MOTOR_E2, HIGH);
-            break;
-    }
-}
+  {
+  switch (estado)
+  {
+  case 1:
+  digitalWrite(MOTOR_E1, HIGH);
+  digitalWrite(MOTOR_E2, LOW);
+  break;
+  case 0:
+  digitalWrite(MOTOR_E1, LOW);
+  digitalWrite(MOTOR_E2, LOW);
+  break;
+  case -1:
+  digitalWrite (MOTOR_E1, LOW);
+  digitalWrite (MOTOR_E2, HIGH);
+  break;
+  }
+  }
 
-void motorDir(int estado)
-{
-    switch (estado) {
-        case 1:
-            digitalWrite(MOTOR_D1, HIGH);
-            digitalWrite(MOTOR_D2, LOW);
-            break;
-        case 0:
-            digitalWrite(MOTOR_D1, LOW);
-            digitalWrite(MOTOR_D2, LOW);
-            break;
-        case -1:
-            digitalWrite(MOTOR_D1, LOW);
-            digitalWrite(MOTOR_D2, HIGH);
-            break;
-    }
-}*/
+  void motorDir(int estado)
+  {
+  switch (estado) {
+  case 1:
+  digitalWrite(MOTOR_D1, HIGH);
+  digitalWrite(MOTOR_D2, LOW);
+  break;
+  case 0:
+  digitalWrite(MOTOR_D1, LOW);
+  digitalWrite(MOTOR_D2, LOW);
+  break;
+  case -1:
+  digitalWrite(MOTOR_D1, LOW);
+  digitalWrite(MOTOR_D2, HIGH);
+  break;
+  }
+  }*/
 //===============FUNÇÕES DE DEBUG=====================================
 /* Como a função de leitura de sensores Borda é chamada uma vez para
    cada array de sensor (de 8 e de 2), basta ter apenas uma entrada
@@ -657,10 +697,10 @@ void loop() {
     //if (!fim) //Para o robô parar assim que o tempo de luta for excedido
     //{
     int pi = 0
-    do
-    {
-        procurar ();
-    } while ((millis() - tempoInicial) <= TEMPO_FIM);
+        do
+        {
+            procurar ();
+        } while ((millis() - tempoInicial) <= TEMPO_FIM);
     controle(pi);
     pi= correcao(distance);
     //   fim = true;
