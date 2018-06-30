@@ -184,7 +184,7 @@ int erro_pi()
       imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
       return erro[2]; // TA RETORNANDO 23
     case 4:
-      imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
+      imprimirDebugOpon ("ESQUERDA", combin, erro[2]);
       return erro[3]; // TA RETORNANDO -45
     case 5:
       /*
