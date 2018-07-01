@@ -25,12 +25,12 @@
 #define VEL_DIR_CURVA_DIR 50
 #define VEL_ESQ_CURVA_ESQ 50
 #define VEL_DIR_CURVA_ESQ 100
-#define VEL_GIRO 255
+#define VEL_GIRO 100
 
 
 //==========TEMPO MOVIMENTAÇÃO==============
-#define TEMPO_CURVA 100 //antes, 500
-#define TEMPO_MOV_LINEAR 80 //PROVISÓRIO
+#define TEMPO_CURVA 200 //antes, 100, 500
+#define TEMPO_MOV_LINEAR 150 //antes 80 
 
 //================TEMPO DA LUTA=================
 unsigned long tempoInicial = 0;
