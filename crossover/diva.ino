@@ -49,7 +49,7 @@ float base = 2.0;
 #define KP 70
 #define KI 0.001
 
-#define VBASE 200
+#define VBASE 255
 
 SharpIR sensor0(GP2YA41SK0F, A3); //A1 com A3 estão invertidos por causa da conexão
 SharpIR sensor1(GP2YA41SK0F, A2);
