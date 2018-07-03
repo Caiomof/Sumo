@@ -356,24 +356,21 @@ int detectaOpon()
 int erro_pi()
 {
   int combin = detectaOpon();
-  int erro[6] = { -45, -23, 0, 23, 45, 0};
+  int erro[6] = {-45, -23, 0, 23, 45, 0};
 
   switch (combin)
   {
     case 0:
       return 0;
-    case 2:
-      imprimirDebugOpon ("MEIO", combin, erro[1]);
-      return erro[2]; // TA RETORNANDO 0
-    case 7:
-      imprimirDebugOpon ("OS TRES", combin, erro[5]);
-      return erro[5]; // TA RETORNANDO 0
     case 1:
       imprimirDebugOpon ("DIREITA", combin, erro[0]);
       return erro[0]; // TA RETORNANDO 45
+    case 2:
+      imprimirDebugOpon ("MEIO", combin, erro[1]);
+      return erro[2]; // TA RETORNANDO 0
     case 3:
       imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
-      return erro[1]; // TA RETORNANDO 23
+      return erro[1]; // TA RETORNANDO 23   
     case 4:
       imprimirDebugOpon ("ESQUERDA", combin, erro[2]);
       return erro[4]; // TA RETORNANDO -45
@@ -387,6 +384,9 @@ int erro_pi()
     case 6:
       imprimirDebugOpon ("ESQUERDA E MEIO", combin, erro[4]);
       return erro[3]; // TA RETORNANDO -23
+     case 7:
+      imprimirDebugOpon ("OS TRES", combin, erro[5]);
+      return erro[5]; // TA RETORNANDO 0       
   }
 }
 
