@@ -29,27 +29,30 @@
 
 
 //==========TEMPO MOVIMENTAÇÃO==============
-#define TEMPO_CURVA 200 //antes, 100, 500
-#define TEMPO_MOV_LINEAR 150 //antes 80 
+#define TEMPO_CURVA 200 //antes, 500
+#define TEMPO_MOV_LINEAR 150 //PROVISÓRIO
 
 //================TEMPO DA LUTA=================
-unsigned long tempoInicial = 0;
+unsigned long int tempoInicial = 0;
 bool fim = false;
 #define TEMPO_FIM 180000 //180s - 3 min
 
 //==========DEFINIÇÕES SHARP_IR=================
 #define INT 250 //número de interações do filtro
-#define QTD_SENS_OPON 2
+#define QTD_SENS_OPON 3
 #define LIMITE 15
 
 //==========PI========================
 float base = 2.0;
+unsigned long previous = 0;
+const long intervalo = 500;
 
 //========== CONSTANTES PI===========
 #define KP 70
 #define KI 0.001
 
-#define VBASE 255
+#define MAX 210
+#define VBASE 150
 
 SharpIR sensor0(GP2YA41SK0F, A3); //A1 com A3 estão invertidos por causa da conexão
 SharpIR sensor1(GP2YA41SK0F, A2);
@@ -59,7 +62,6 @@ int distance[QTD_SENS_OPON] = {0};
 
 //===========DEFINIÇÕES IR_BORDA========================================================
 #define QTD_SENS_BORDA 2
-
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low (não diminuir para 1000, pois os sensores do array ficarão sempre em 1)
 #define EMITTER_PIN   A0   // emitter is controlled by digital pin A0 (serve apenas para o array)
 
@@ -313,9 +315,10 @@ void reacaoBorda (int * codigoReacao)
 */
 void preenchimento()
 {
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < QTD_SENS_OPON; i++)
   {
-    switch (i) {
+    switch (i)
+    {
       case 0: distance[0] = sensor0.getDistance();
       case 1: distance[1] = sensor1.getDistance();
       case 2: distance[2] = sensor2.getDistance();
@@ -416,20 +419,34 @@ int correcao()
   return pi;
 }
 
-
 void seguir()
 {
+  unsigned long int current = millis();
+
   if (detectaOpon())
   {
     float pi = 0;
     pi = correcao();
     controle(pi);
+
+    previous = current;
   }
-  else // ESTRATEGIA AQUI!!!
+  /* ESTRATEGIA AQUI!!! */
+  else
   {
-    //movimentacao(PARADO, PARADO);
-    Serial.println("Parado");
+    // FREIO //
+    if (current - previous <= intervalo)
+    {
+      current = millis();
+      movimentacao(-15, -15); // VALOR PARA ELE PARAR
+      Serial.println("Teste");
+    }
+    ///////////
+    // AQUI //
+    movimentacao(MAX / 2, MAX / 2); // ESTRATEGIA AQUI!!
   }
+  Serial.println(current - previous);
+  //////////////////////////////
 }
 
 /*
@@ -439,16 +456,17 @@ void seguir()
 */
 void procurar ()
 {
-  //Serial.println("Nova procura\n");
-  movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO); // COMENTAR QUANDO A "seguir()" FOR CORRIGIDA
+
+  //movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO); // COMENTAR QUANDO A "seguir()" FOR CORRIGIDA
+
   do
   {
     lerSensorBorda(QTD_SENS_BORDA); //preenche o array de valores  detectarBorda(codReacao);
     detectarBorda(codReacao);
     //Serial.println ("SEGUINDO");
-    
-    //seguir();==========================VERIFICAR PORQUE O PI ESTÁ SAINDO COMO ZERO NA FUNCAO "controle"
-    
+
+    seguir(); //==========================VERIFICAR PORQUE O PI ESTÁ SAINDO COMO ZERO NA FUNCAO "controle"
+
   } while (codReacao[0] == 0 && codReacao[1] == 0);
   Serial.println ("IDENTIFICOU A BORDA");
   reacaoBorda (codReacao);
@@ -466,25 +484,25 @@ void controle(int pi)
 
   if ( pi < 0)
   {
-    pi = map(pi, 0, 3150, 0, (200 - VBASE) ); /*255 - Maximo*/
+    pi = map(pi, 0, 3150, 0, MAX ); /*255 - Maximo*/
 
     motorDir(VBASE + pi);
     motorEsq(VBASE - pi);
-    imprimirDebugMotorCorrecao  (VBASE - pi, VBASE + pi, "PI Negativo ", pi);
+    imprimirDebugMotorCorrecao(VBASE - pi, VBASE + pi, "PI Negativo ", pi);
 
   }
   if (pi > 0)
   {
-    pi = map(pi, 3150, 0, (200 - VBASE), 0 ); /*255 - Maximo*/
+    pi = map(pi, 3150, 0, MAX, 0 ); /*255 - Maximo*/
 
     motorDir(VBASE + pi);
     motorEsq(VBASE - pi);
-    imprimirDebugMotorCorrecao  (VBASE - pi, VBASE + pi, "PI Positivo ", pi);
+    imprimirDebugMotorCorrecao(VBASE - pi, VBASE + pi, "PI Positivo ", pi);
   }
-  if (pi == 0)
+  if (!pi)
   {
-    movimentacao(VEL_MAX_PADRAO, VEL_MAX_PADRAO);
-    imprimirDebugMotorCorrecao  (VEL_MAX_PADRAO, VEL_MAX_PADRAO, "Para Frente ", pi);
+    movimentacao(MAX, MAX);
+    imprimirDebugMotorCorrecao(MAX, MAX, "Para Frente ", pi);
   }
   //Serial.println(pi); //Print the value to the serial monitor
 }
@@ -496,8 +514,10 @@ void controle(int pi)
 void motorDir (int potencia)
 {
   //DELAY == 0 É SINAL DE DEBUG DESATIVADO
-  if (DELAY == 0) {
-    if (potencia > 0) {
+  if (DELAY == 0)
+  {
+    if (potencia > 0)
+    {
       digitalWrite(MOTOR_D2, LOW);
       analogWrite(MOTOR_D1, abs(potencia));
       //digitalWrite(MOTOR_D1, HIGH);
@@ -507,7 +527,8 @@ void motorDir (int potencia)
       digitalWrite (MOTOR_D1, LOW);
       analogWrite (MOTOR_D2, abs(potencia));
       //digitalWrite(MOTOR_D2, HIGH);
-    } else
+    }
+    else
     {
       digitalWrite (MOTOR_D1, LOW);
       digitalWrite (MOTOR_D2, LOW);
@@ -516,7 +537,8 @@ void motorDir (int potencia)
 }
 void motorEsq(int potencia)
 {
-  if (DELAY == 0) {
+  if (DELAY == 0)
+  {
     if (potencia > 0)
     {
       digitalWrite(MOTOR_E2, LOW);
@@ -528,7 +550,8 @@ void motorEsq(int potencia)
       digitalWrite(MOTOR_E1, LOW);
       analogWrite(MOTOR_E2, abs(potencia));
       //digitalWrite(MOTOR_E2, HIGH);
-    } else
+    }
+    else
     {
       digitalWrite(MOTOR_E1, LOW);
       digitalWrite(MOTOR_E2, LOW);
