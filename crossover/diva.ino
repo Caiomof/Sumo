@@ -25,11 +25,11 @@
 #define VEL_DIR_CURVA_DIR 50
 #define VEL_ESQ_CURVA_ESQ 50
 #define VEL_DIR_CURVA_ESQ 100
-#define VEL_GIRO 100
+#define VEL_GIRO 120
 
 
 //==========TEMPO MOVIMENTAÇÃO==============
-#define TEMPO_CURVA 200 //antes, 500
+#define TEMPO_CURVA 300 //antes, 500
 #define TEMPO_MOV_LINEAR 150 //PROVISÓRIO
 
 //================TEMPO DA LUTA=================
@@ -40,7 +40,7 @@ bool fim = false;
 //==========DEFINIÇÕES SHARP_IR=================
 #define INT 250 //número de interações do filtro
 #define QTD_SENS_OPON 3
-#define LIMITE 15
+#define LIMITE 22
 
 //==========PI========================
 float base = 2.0;
@@ -51,8 +51,9 @@ const long intervalo = 500;
 #define KP 70
 #define KI 0.001
 
-#define MAX 210
-#define VBASE 150
+#define MAX 180
+#define VMAX 180
+#define VBASE 0
 
 SharpIR sensor0(GP2YA41SK0F, A3); //A1 com A3 estão invertidos por causa da conexão
 SharpIR sensor1(GP2YA41SK0F, A2);
@@ -74,8 +75,6 @@ unsigned int valSensoresF[QTD_SENS_BORDA] = {sensorF1, sensorF2};
 unsigned int valSensoresT[QTD_SENS_BORDA] = {sensorD1, sensorD2};
 char PortasF[QTD_SENS_BORDA] = {sensorF1, sensorF2};
 char PortasT[QTD_SENS_BORDA] = {sensorD1, sensorD2};
-
-
 
 /* QTRSensorsRC qtrrc8((unsigned char[]) {
    A0, 12, 9, 8, 7, 4, 3, 2
@@ -141,7 +140,7 @@ void reacaoBorda (int * codigoReacao)
       do
       {
 
-        movimentacao (-VEL_GIRO, VEL_GIRO);
+        movimentacao (-VEL_GIRO, -VEL_GIRO);
 
         //================================================================================
         imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "(NÃO MAIS)Indo para trás");
@@ -154,7 +153,7 @@ void reacaoBorda (int * codigoReacao)
         //&& ao invés de ||: porque caso a detecção mude antes do fim de uma reação, ele já se corrige
       } while (((millis() - tempo) <= TEMPO_MOV_LINEAR) && (codigoReacao[0] > 0 && codigoReacao[1] > 0) );
       tempo = 0;
-      //parar();
+      gira();
     }
     else if (codigoReacao[0] > 0 && codigoReacao[1] < 0)
     {
@@ -162,7 +161,7 @@ void reacaoBorda (int * codigoReacao)
       do
       {
 
-        movimentacao (VEL_GIRO, -VEL_GIRO);
+        movimentacao (-VEL_GIRO, -VEL_GIRO);
 
         //================================================================================
         imprimirDebugMotor(VEL_GIRO, -VEL_GIRO, "Curva para Direita");
@@ -174,14 +173,14 @@ void reacaoBorda (int * codigoReacao)
       } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] > 0 && codigoReacao[1] < 0));
 
       tempo = 0;
-      //parar();
+      gira();
     }
     else if (codigoReacao[0] < 0 && codigoReacao[1] > 0)
     {
       tempo = millis();
       do
       {
-        movimentacao (-VEL_GIRO, VEL_GIRO);
+        movimentacao (-VEL_GIRO, -VEL_GIRO);
 
         //================================================================================
         imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Curva para Esquerda");
@@ -192,7 +191,7 @@ void reacaoBorda (int * codigoReacao)
 
       } while (((millis() - tempo) <= TEMPO_CURVA) && (codigoReacao[0] < 0 && codigoReacao[1] > 0));
       tempo = 0;
-      //parar();
+      gira();
     }
     else if (codigoReacao[0] < 0 && codigoReacao[1] < 0)
     {
@@ -210,7 +209,7 @@ void reacaoBorda (int * codigoReacao)
 
       } while (((millis() - tempo) <= 2000) && (codigoReacao[0] < 0 && codigoReacao[1] < 0));
       tempo = 0;
-      //parar();
+      gira();
     }
     else if (codigoReacao[0] > 0 && codigoReacao[1] == 0)
       //Aqui o robô gira no próprio eixo e depois faz curva na mesma direção
@@ -221,7 +220,7 @@ void reacaoBorda (int * codigoReacao)
 
         do
         {
-          movimentacao (VEL_GIRO, -VEL_GIRO);
+          movimentacao (-VEL_GIRO, -VEL_GIRO);
 
           //================================================================================
           imprimirDebugMotor(VEL_GIRO, -VEL_GIRO, "Virando à Direita");
@@ -234,9 +233,9 @@ void reacaoBorda (int * codigoReacao)
         do
         {
 
-          movimentacao (VEL_GIRO, -VEL_GIRO);
+          movimentacao (-VEL_GIRO, -VEL_GIRO);
           //================================================================================
-          imprimirDebugMotor(VEL_GIRO, -VEL_GIRO, "Curva à Direita");
+          imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Curva à Direita");
           //================================================================================
 
           lerSensorBorda(QTD_SENS_BORDA); //preenche o array de valores
@@ -248,7 +247,7 @@ void reacaoBorda (int * codigoReacao)
       } while (codigoReacao[0] > 0 && codigoReacao[1] == 0);
 
       tempo = 0;
-      //parar();
+      gira();
     }
 
     else if (codigoReacao[0] == 0 && codigoReacao[1] > 0)
@@ -258,10 +257,10 @@ void reacaoBorda (int * codigoReacao)
         do
         {
 
-          movimentacao (-VEL_GIRO, VEL_GIRO);
+          movimentacao (-VEL_GIRO, -VEL_GIRO);
           //================================================================================
           imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Virando à Esquerda");
-          //================================================================================
+          //========================================================================
 
 
         } while ((millis() - tempo) <= TEMPO_CURVA);
@@ -273,7 +272,7 @@ void reacaoBorda (int * codigoReacao)
 
           movimentacao (-VEL_GIRO, VEL_GIRO);
           //================================================================================
-          imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Curva à Esquerda");
+          imprimirDebugMotor(VEL_GIRO, -VEL_GIRO, "Curva à Esquerda");
           //================================================================================
 
           lerSensorBorda(QTD_SENS_BORDA); //preenche o array de valores
@@ -285,7 +284,7 @@ void reacaoBorda (int * codigoReacao)
       } while (codigoReacao[0] == 0 && codigoReacao[1] > 0);
 
       tempo = 0;
-      //parar();
+      gira();
     }
     else if ((codigoReacao[0] == 0 && codigoReacao[1] < 0) || (codigoReacao[0] < 0 && codigoReacao[1] == 0))
     {
@@ -301,7 +300,7 @@ void reacaoBorda (int * codigoReacao)
       } while ((millis() - tempo) <= TEMPO_MOV_LINEAR);
 
       tempo = 0;
-      //parar();
+      gira();
 
     }
 
@@ -356,7 +355,7 @@ int detectaOpon()
 int erro_pi()
 {
   int combin = detectaOpon();
-  int erro[6] = {-45, -23, 0, 23, 45, 0};
+  int erro[6] = { -45, -23, 0, 23, 45, 0};
 
   switch (combin)
   {
@@ -370,7 +369,7 @@ int erro_pi()
       return erro[2]; // TA RETORNANDO 0
     case 3:
       imprimirDebugOpon ("DIREITA E MEIO", combin, erro[2]);
-      return erro[1]; // TA RETORNANDO 23   
+      return erro[1]; // TA RETORNANDO 23
     case 4:
       imprimirDebugOpon ("ESQUERDA", combin, erro[2]);
       return erro[4]; // TA RETORNANDO -45
@@ -384,9 +383,9 @@ int erro_pi()
     case 6:
       imprimirDebugOpon ("ESQUERDA E MEIO", combin, erro[4]);
       return erro[3]; // TA RETORNANDO -23
-     case 7:
+    case 7:
       imprimirDebugOpon ("OS TRES", combin, erro[5]);
-      return erro[5]; // TA RETORNANDO 0       
+      return erro[5]; // TA RETORNANDO 0
   }
 }
 
@@ -421,7 +420,7 @@ int correcao()
 
 void seguir()
 {
-  unsigned long int current = millis();
+  //unsigned long int current = millis();
 
   if (detectaOpon())
   {
@@ -429,23 +428,25 @@ void seguir()
     pi = correcao();
     controle(pi);
 
-    previous = current;
+    //previous = current;
   }
   /* ESTRATEGIA AQUI!!! */
   else
   {
-    // FREIO //
-    if (current - previous <= intervalo)
-    {
-      current = millis();
-      movimentacao(-15, -15); // VALOR PARA ELE PARAR
-      Serial.println("Teste");
-    }
-    ///////////
+    /*
+      // FREIO //
+      if (current - previous <= intervalo)
+      {
+        current = millis();
+        movimentacao(-15, -15); // VALOR PARA ELE PARAR
+        Serial.println("Teste");
+      }
+      ///////////
+    */
     // AQUI //
     movimentacao(MAX / 2, MAX / 2); // ESTRATEGIA AQUI!!
   }
-  Serial.println(current - previous);
+  //Serial.println(current - previous);
   //////////////////////////////
 }
 
@@ -457,21 +458,19 @@ void seguir()
 void procurar ()
 {
 
+  unsigned long tempo = 0;
   //movimentacao (VEL_MAX_PADRAO, VEL_MAX_PADRAO); // COMENTAR QUANDO A "seguir()" FOR CORRIGIDA
 
   do
   {
-    lerSensorBorda(QTD_SENS_BORDA); //preenche o array de valores  detectarBorda(codReacao);
+    lerSensorBorda(QTD_SENS_BORDA); //preenche o array de valores
     detectarBorda(codReacao);
-    //Serial.println ("SEGUINDO");
-
     seguir(); //==========================VERIFICAR PORQUE O PI ESTÁ SAINDO COMO ZERO NA FUNCAO "controle"
-
   } while (codReacao[0] == 0 && codReacao[1] == 0);
   Serial.println ("IDENTIFICOU A BORDA");
   reacaoBorda (codReacao);
-
 }
+
 
 void movimentacao(int potenciaE, int potenciaD)
 {
@@ -484,7 +483,7 @@ void controle(int pi)
 
   if ( pi < 0)
   {
-    pi = map(pi, 0, 3150, 0, MAX ); /*255 - Maximo*/
+    pi = map(pi, 0, 3150, 0, VMAX - VBASE); /*255 - Maximo*/
 
     motorDir(VBASE + pi);
     motorEsq(VBASE - pi);
@@ -493,7 +492,7 @@ void controle(int pi)
   }
   if (pi > 0)
   {
-    pi = map(pi, 3150, 0, MAX, 0 ); /*255 - Maximo*/
+    pi = map(pi, 3150, 0, VMAX - VBASE, 0 ); /*255 - Maximo*/
 
     motorDir(VBASE + pi);
     motorEsq(VBASE - pi);
@@ -501,10 +500,25 @@ void controle(int pi)
   }
   if (!pi)
   {
-    movimentacao(MAX, MAX);
+    movimentacao(180, 180);
     imprimirDebugMotorCorrecao(MAX, MAX, "Para Frente ", pi);
   }
   //Serial.println(pi); //Print the value to the serial monitor
+}
+
+void gira()
+{
+    unsigned long tempo = 0;
+      tempo = millis();
+      do
+      {
+
+        movimentacao (-VEL_GIRO, VEL_GIRO);
+        //================================================================================
+        imprimirDebugMotor(-VEL_GIRO, VEL_GIRO, "Virando à Esquerda");
+        //========================================================================
+      } while ((millis() - tempo) <= 150);
+          tempo = 0;
 }
 
 
